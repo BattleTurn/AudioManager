@@ -1,0 +1,23 @@
+{
+  "name": "battleturn.audio_manager",
+  "displayName": "Audio Manager",
+  "version": "1.0.0",
+  "unity": "2022.1",
+  "description": "A audio manager, which can auto generate enum base on names",
+  "keywords": [
+    "Audio Manager",
+    "Audio"
+  ],
+  "category": "Scripting",
+  "dependencies": {
+  },
+  "repository": {
+    "url": "https://github.com/BattleTurn/AudioManager.git",
+    "type": "git"
+  },
+  "hidden": false,
+  "author": {
+    "name": "BattleTurn",
+    "url": "https://github.com/BattleTurn"
+  }
+}

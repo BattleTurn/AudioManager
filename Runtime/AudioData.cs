@@ -1,0 +1,80 @@
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.Audio;
+
+namespace BattleTurn.AudioManager.Runtime
+{
+    [CreateAssetMenu(fileName = "AudioData", menuName = "BattleTurn/Audio/AudioData")]
+    public class AudioData : ScriptableObject
+    {
+        public AudioContent[] audioContents;
+        public AudioMixerGroup mixerGroup;
+
+        private Dictionary<string, AudioClip> audioContentDict;
+
+        public AudioClip this[string audioName]
+        {
+            get
+            {
+                if (TryGetClip(audioName, out var clip))
+                    return clip;
+
+                Debug.LogWarning($"AudioData: Audio name '{audioName}' not found");
+                return null;
+            }
+        }
+
+        private void OnEnable()
+        {
+            EnsureInitialized();
+        }
+
+        private void OnValidate()
+        {
+            // Keep inspector edits in sync with the runtime lookup table.
+            audioContentDict = null;
+        }
+
+        private void EnsureInitialized()
+        {
+            if (audioContentDict != null)
+                return;
+
+            audioContentDict = new Dictionary<string, AudioClip>();
+
+            if (audioContents == null)
+                return;
+
+            foreach (var content in audioContents)
+            {
+                if (content == null)
+                    continue;
+
+                if (string.IsNullOrWhiteSpace(content.name))
+                    continue;
+
+                if (!audioContentDict.ContainsKey(content.name))
+                    audioContentDict.Add(content.name, content.clip);
+                else
+                    Debug.LogWarning($"AudioData: Duplicate audio content name '{content.name}'");
+            }
+        }
+
+        public bool TryGetClip(string audioName, out AudioClip clip)
+        {
+            EnsureInitialized();
+
+            if (string.IsNullOrEmpty(audioName))
+            {
+                clip = null;
+                return false;
+            }
+
+            if (audioContentDict.TryGetValue(audioName, out clip))
+                return clip != null;
+
+            clip = null;
+            return false;
+        }
+    }
+}

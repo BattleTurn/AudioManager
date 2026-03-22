@@ -1,0 +1,18 @@
+{
+    "name": "BattleTurn.AudioManager.Editor",
+    "rootNamespace": "BattleTurn.AudioManager.Editor",
+    "references": [
+        "GUID:8575d04ba6bbf47eb84d9474af319f58"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
