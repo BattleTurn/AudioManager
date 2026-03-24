@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UniRx;
 using Cysharp.Threading.Tasks;
+using NaughtyAttributes;
 
 namespace BattleTurn.AudioManager.Runtime
 {
@@ -14,6 +15,8 @@ namespace BattleTurn.AudioManager.Runtime
 		private static SoundManager _instance;
 
 		[SerializeField] private byte _prewarmCount = 8;
+
+		[Expandable]
 		[SerializeField] private AudioManager _audioManager;
 
 		private readonly ListPool<AudioSource> _listPool = new();
@@ -27,6 +30,7 @@ namespace BattleTurn.AudioManager.Runtime
 		private bool _isDefault;
 		private bool _volumeInitialized;
 
+		#region Properties
 		public static float Volume
 		{
 			get => _volume.Value;
@@ -34,16 +38,6 @@ namespace BattleTurn.AudioManager.Runtime
 		}
 
 		public static IReadOnlyReactiveProperty<float> VolumeRx => _volume;
-
-		private static void SetVolume(float value)
-		{
-			var clamped = Mathf.Clamp01(value);
-			if (Mathf.Approximately(_volume.Value, clamped))
-				return;
-
-			_volume.Value = clamped;
-			PlayerPrefs.SetFloat(VOLUME_KEY, clamped);
-		}
 
 		public static SoundManager Instance
 		{
@@ -63,14 +57,9 @@ namespace BattleTurn.AudioManager.Runtime
 			}
 		}
 
-		public static void StopInstance()
-		{
-			if (_instance == null)
-				return;
+		#endregion
 
-			_instance.StopAll();
-		}
-
+		#region Unity Callbacks
 		private void Awake()
 		{
 			_sfxData = _audioManager?.SFXData;
@@ -90,6 +79,32 @@ namespace BattleTurn.AudioManager.Runtime
 
 			if (_prewarmCount > 0)
 				Prewarm(_prewarmCount);
+		}
+
+		#endregion
+
+		public static void StopInstance()
+		{
+			if (_instance == null)
+				return;
+
+			_instance.StopAll();
+		}
+
+		private static void SetVolume(float value)
+		{
+			var clamped = Mathf.Clamp01(value);
+			if (Mathf.Approximately(_volume.Value, clamped))
+				return;
+
+			_volume.Value = clamped;
+			PlayerPrefs.SetFloat(VOLUME_KEY, clamped);
+		}
+
+		private static void SetParentAndResetLocal(Transform child, Transform parent)
+		{
+			child.SetParent(parent, worldPositionStays: false);
+			child.localPosition = Vector3.zero;
 		}
 
 		private void SetupVolume()
@@ -199,6 +214,7 @@ namespace BattleTurn.AudioManager.Runtime
 			return null;
 		}
 
+		#region Public API
 		public void Prewarm(int count)
 		{
 			for (var i = 0; i < count; i++)
@@ -225,13 +241,8 @@ namespace BattleTurn.AudioManager.Runtime
 		public AudioSource Play<T>(T audioName, sbyte loopCount, IEnumerable<AudioMixParameter> mixParameters) where T : Enum
 		{
 			var clip = FindClip(audioName);
-			if (clip == null)
-			{
-				Debug.LogWarning("SoundManager: Tried to play a null AudioClip.");
-				return null;
-			}
 
-			var src = Get();
+			AudioSource src = Get();
 			ConfigureSource(src, clip, loopCount, null, mixParameters);
 			src.Play();
 
@@ -248,13 +259,8 @@ namespace BattleTurn.AudioManager.Runtime
 		public AudioSource PlayOneShot<T>(T audioName, IEnumerable<AudioMixParameter> mixParameters) where T : Enum
 		{
 			var clip = FindClip(audioName);
-			if (clip == null)
-			{
-				Debug.LogWarning("SoundManager: Tried to play a null AudioClip.");
-				return null;
-			}
 
-			var src = Get();
+			AudioSource src = Get();
 			// OneShot is always a single play.
 			ConfigureSource(src, clip, loopCount: 0, follow: null, mixParameters);
 			src.PlayOneShot(clip);
@@ -290,13 +296,8 @@ namespace BattleTurn.AudioManager.Runtime
 		public AudioSource PlayAt<T>(T audioName, Vector3 position, sbyte loopCount, IEnumerable<AudioMixParameter> mixParameters) where T : Enum
 		{
 			var clip = FindClip(audioName);
-			if (clip == null)
-			{
-				Debug.LogWarning("SoundManager: Tried to play a null AudioClip.");
-				return null;
-			}
 
-			var src = Get();
+			AudioSource src = Get();
 			src.transform.position = position;
 			ConfigureSource(src, clip, loopCount, null, mixParameters);
 			src.Play();
@@ -324,13 +325,8 @@ namespace BattleTurn.AudioManager.Runtime
 		public AudioSource PlayFollow<T>(T audioName, Transform follow, sbyte loopCount, IEnumerable<AudioMixParameter> mixParameters) where T : Enum
 		{
 			var clip = FindClip(audioName);
-			if (clip == null)
-			{
-				Debug.LogWarning("SoundManager: Tried to play a null AudioClip.");
-				return null;
-			}
 
-			var src = Get();
+			AudioSource src = Get();
 			ConfigureSource(src, clip, loopCount, follow, mixParameters);
 			src.Play();
 
@@ -347,14 +343,6 @@ namespace BattleTurn.AudioManager.Runtime
 		public AudioSource PlayLoopFollow<T>(T audioName, Transform follow, IEnumerable<AudioMixParameter> mixParameters) where T : Enum
 		{
 			return PlayFollow(audioName, follow, loopCount: -1, mixParameters);
-		}
-
-		private AudioClip FindClip<T>(T audioName) where T : Enum
-		{
-			if (_sfxData == null)
-				return null;
-
-			return _sfxData[audioName.ToString()];
 		}
 
 		public void Stop(AudioSource source)
@@ -390,6 +378,21 @@ namespace BattleTurn.AudioManager.Runtime
 			ReturnActiveSnapshot(tmp);
 		}
 
+		public void StopAll()
+		{
+			ReleaseAllActive();
+		}
+
+		#endregion
+
+		private AudioClip FindClip<T>(T audioName) where T : Enum
+		{
+			if (_sfxData == null)
+				throw new NullReferenceException("SoundManager: AudioData is not assigned.");
+
+			return _sfxData[audioName.ToString()];
+		}
+
 		private async UniTask FadeOutAndStopAsync(AudioSource src, int version, float fadeDuration)
 		{
 			fadeDuration = Mathf.Max(0.0001f, fadeDuration);
@@ -412,11 +415,6 @@ namespace BattleTurn.AudioManager.Runtime
 
 			SetSourceVolumeFactor(src, 0f);
 			Release(src);
-		}
-
-		public void StopAll()
-		{
-			ReleaseAllActive();
 		}
 
 		private void ReleaseAllActive()
@@ -465,9 +463,9 @@ namespace BattleTurn.AudioManager.Runtime
 		private bool IsValid(AudioSource src, int version)
 		{
 			return src != null
-				   && _active.Contains(src)
-				   && _sourceVersion.TryGetValue(src, out var v)
-				   && v == version;
+				&& _active.Contains(src)
+				&& _sourceVersion.TryGetValue(src, out var v)
+				&& v == version;
 		}
 
 		private void Release(AudioSource src)
@@ -494,12 +492,6 @@ namespace BattleTurn.AudioManager.Runtime
 			src.volume = _volume.Value;
 			SetParentAndResetLocal(src.transform, transform);
 			src.gameObject.SetActive(false);
-		}
-
-		private static void SetParentAndResetLocal(Transform child, Transform parent)
-		{
-			child.SetParent(parent, worldPositionStays: false);
-			child.localPosition = Vector3.zero;
 		}
 
 		private void ConfigureSource(AudioSource src, AudioClip clip, sbyte loopCount, Transform follow, IEnumerable<AudioMixParameter> mixParameters)

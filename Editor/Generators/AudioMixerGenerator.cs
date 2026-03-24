@@ -34,19 +34,13 @@ namespace BattleTurn.AudioManager.Editor
         [MenuItem("Tools/Audio/Create Game Mixer")]
         public static void CreateMixer()
         {
-            string[] guids = AssetDatabase.FindAssets("t:AudioMixer");
-            string path = "";
-            path = FindAssetAtPath(guids, path);
-            // 1. Load template từ package
-            var template = AssetDatabase.LoadAssetAtPath<AudioMixer>(path);
-
-            if (template == null)
+            var templatePath = FindTemplateMixerPath();
+            if (string.IsNullOrEmpty(templatePath))
             {
-                Debug.LogError("❌ Cannot find template mixer at: " + path);
+                Debug.LogError("❌ Cannot find template mixer.");
                 return;
             }
 
-            // 2. Ensure folder tồn tại
             string folder = System.IO.Path.GetDirectoryName(OUTPUT_PATH);
             if (!AssetDatabase.IsValidFolder(folder))
             {
@@ -65,12 +59,21 @@ namespace BattleTurn.AudioManager.Editor
                 AssetDatabase.Refresh();
             }
 
-            var newMixer = Object.Instantiate(template);
-            AudioMixerUtil.GetExposedParams(newMixer);
+            if (!AssetDatabase.CopyAsset(templatePath, OUTPUT_PATH))
+            {
+                Debug.LogError($"❌ Cannot copy template mixer from '{templatePath}' to '{OUTPUT_PATH}'.");
+                return;
+            }
 
-            AssetDatabase.CreateAsset(newMixer, OUTPUT_PATH);
             AssetDatabase.SaveAssets();
-            AssetDatabase.Refresh();
+            AssetDatabase.ImportAsset(OUTPUT_PATH, ImportAssetOptions.ForceUpdate);
+
+            var newMixer = AssetDatabase.LoadAssetAtPath<AudioMixer>(OUTPUT_PATH);
+            if (newMixer == null)
+            {
+                Debug.LogError("❌ Copied mixer asset exists but could not be loaded as AudioMixer.");
+                return;
+            }
 
             Debug.Log($"✅ Created AudioMixer at: {OUTPUT_PATH}");
 
@@ -132,13 +135,45 @@ namespace BattleTurn.AudioManager.Editor
             if (existing != null)
                 return true;
 
-            var newMixer = UnityEngine.Object.Instantiate(template);
-            AssetDatabase.CreateAsset(newMixer, GAME_MIXER_UNITY_PATH);
+            if (!AssetDatabase.CopyAsset(TEMPLATE_MIXER_UNITY_PATH, GAME_MIXER_UNITY_PATH))
+            {
+                Debug.LogWarning($"AudioMixerGenerator: Failed to copy template mixer from '{TEMPLATE_MIXER_UNITY_PATH}' to '{GAME_MIXER_UNITY_PATH}'.");
+                return false;
+            }
+
             AssetDatabase.SaveAssets();
             AssetDatabase.ImportAsset(GAME_MIXER_UNITY_PATH, ImportAssetOptions.ForceUpdate);
 
+            var newMixer = AssetDatabase.LoadAssetAtPath<AudioMixer>(GAME_MIXER_UNITY_PATH);
+            if (newMixer == null)
+            {
+                Debug.LogWarning("AudioMixerGenerator: Copied GameMixer could not be loaded as AudioMixer.");
+                return false;
+            }
+
             AudioManagerMixerAutoRef.WireAllAudioManagerAssets(newMixer);
             return true;
+        }
+
+        private static string FindTemplateMixerPath()
+        {
+            var template = AssetDatabase.LoadAssetAtPath<AudioMixer>(TEMPLATE_MIXER_UNITY_PATH);
+            if (template != null)
+                return TEMPLATE_MIXER_UNITY_PATH;
+
+            string[] guids = AssetDatabase.FindAssets("t:AudioMixer");
+            foreach (var guid in guids)
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+                if (path.Contains("/Editor/Template/", System.StringComparison.Ordinal) &&
+                    path.EndsWith(".mixer", System.StringComparison.Ordinal))
+                {
+                    Debug.Log("✅ Found template: " + path);
+                    return path;
+                }
+            }
+
+            return null;
         }
 
         private static string GetMixerCreatedOnceKey()
@@ -164,20 +199,5 @@ namespace BattleTurn.AudioManager.Editor
             }
         }
 
-        private static string FindAssetAtPath(string[] guids, string path)
-        {
-            foreach (var guid in guids)
-            {
-                string pathL = AssetDatabase.GUIDToAssetPath(guid);
-                if (pathL.Contains("/Editor/Template/", System.StringComparison.Ordinal) && pathL.EndsWith(".mixer", System.StringComparison.Ordinal))
-                {
-                    Debug.Log("✅ Found template: " + pathL);
-                    path = pathL;
-                    break;
-                }
-            }
-
-            return path;
-        }
     }
 }

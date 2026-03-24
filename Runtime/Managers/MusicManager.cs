@@ -1,9 +1,11 @@
 
+using System;
 using System.Reflection;
 using System.Collections.Generic;
 using UnityEngine;
 using UniRx;
 using Cysharp.Threading.Tasks;
+using NaughtyAttributes;
 
 namespace BattleTurn.AudioManager.Runtime
 {
@@ -15,6 +17,8 @@ namespace BattleTurn.AudioManager.Runtime
         private static MusicManager _instance;
 
         [SerializeField] private byte _prewarmCount = 2;
+
+        [Expandable]
         [SerializeField] private AudioManager _audioManager;
 
         private readonly Queue<AudioSource> _pool = new();
@@ -31,6 +35,7 @@ namespace BattleTurn.AudioManager.Runtime
 
         private bool _volumeInitialized;
 
+        #region Properties
         public static float Volume
         {
             get => _volume.Value;
@@ -38,16 +43,6 @@ namespace BattleTurn.AudioManager.Runtime
         }
 
         public static IReadOnlyReactiveProperty<float> VolumeRx => _volume;
-
-        private static void SetVolume(float value)
-        {
-            var clamped = Mathf.Clamp01(value);
-            if (Mathf.Approximately(_volume.Value, clamped))
-                return;
-
-            _volume.Value = clamped;
-            PlayerPrefs.SetFloat(VOLUME_KEY, clamped);
-        }
 
         public static MusicManager Instance
         {
@@ -66,15 +61,9 @@ namespace BattleTurn.AudioManager.Runtime
                 return _instance;
             }
         }
+        #endregion
 
-        public static void StopInstance()
-        {
-            if (_instance == null)
-                return;
-
-            _instance.StopAll();
-        }
-
+        #region Unity Callbacks
         private void Awake()
         {
             _musicData = _audioManager?.MusicData;
@@ -95,6 +84,226 @@ namespace BattleTurn.AudioManager.Runtime
             if (_prewarmCount > 0)
                 Prewarm(_prewarmCount);
         }
+        #endregion
+
+        public static void StopInstance()
+        {
+            if (_instance == null)
+                return;
+
+            _instance.StopAll();
+        }
+
+        private static void SetVolume(float value)
+        {
+            var clamped = Mathf.Clamp01(value);
+            if (Mathf.Approximately(_volume.Value, clamped))
+                return;
+
+            _volume.Value = clamped;
+            PlayerPrefs.SetFloat(VOLUME_KEY, clamped);
+        }
+
+        private static void SetParentAndResetLocal(Transform child, Transform parent)
+        {
+            child.SetParent(parent, worldPositionStays: false);
+            child.localPosition = Vector3.zero;
+        }
+
+        private static void FillAllExposedParameterNames(List<string> buffer)
+        {
+            const string fullTypeName = "BattleTurn.AudioManager.Runtime.AudioMixerExposedParameter";
+            var type = ResolveType(fullTypeName);
+            if (type == null)
+                return;
+
+            var fields = type.GetFields(BindingFlags.Public | BindingFlags.Static);
+
+            foreach (var field in fields)
+            {
+                if (field.FieldType != typeof(string))
+                    continue;
+
+                if (!field.IsLiteral || field.IsInitOnly)
+                    continue;
+
+                if (field.GetRawConstantValue() is string value)
+                    buffer.Add(value);
+            }
+        }
+
+        private static Type ResolveType(string fullTypeName)
+        {
+            foreach (var asm in AppDomain.CurrentDomain.GetAssemblies())
+            {
+                var t = asm.GetType(fullTypeName, throwOnError: false);
+                if (t != null)
+                    return t;
+            }
+
+            return null;
+        }
+
+
+        #region Public API
+        public AudioSource Play<T>(T audioName, params AudioMixParameter[] mixParameters) where T : Enum
+        {
+            return Play(audioName, loopCount: 0, mixParameters);
+        }
+
+        public AudioSource Play<T>(T audioName, IEnumerable<AudioMixParameter> mixParameters) where T : Enum
+        {
+            return Play(audioName, loopCount: 0, mixParameters);
+        }
+
+        public AudioSource Play<T>(T audioName, sbyte loopCount, params AudioMixParameter[] mixParameters) where T : Enum
+        {
+            return Play(audioName, loopCount, (IEnumerable<AudioMixParameter>)mixParameters);
+        }
+
+        public AudioSource Play<T>(T audioName, sbyte loopCount, IEnumerable<AudioMixParameter> mixParameters) where T : Enum
+        {
+            var clip = FindClip(audioName);
+
+            // MusicManager plays a single music track at a time.
+            StopAll();
+
+            AudioSource src = Get();
+            ConfigureSource(src, clip, loopCount, follow: null, mixParameters);
+            src.Play();
+            StartReleaseRoutine(src, loopCount);
+            return src;
+        }
+
+        public AudioSource PlayOneShot<T>(T audioName, params AudioMixParameter[] mixParameters) where T : Enum
+        {
+            return PlayOneShot(audioName, (IEnumerable<AudioMixParameter>)mixParameters);
+        }
+
+        public AudioSource PlayOneShot<T>(T audioName, IEnumerable<AudioMixParameter> mixParameters) where T : Enum
+        {
+            var clip = FindClip(audioName);
+
+            AudioSource src = Get();
+            ConfigureSource(src, clip, loopCount: 0, follow: null, mixParameters);
+            src.PlayOneShot(clip);
+            StartReleaseRoutine(src, loopCount: 0);
+            return src;
+        }
+
+        public AudioSource PlayLoop<T>(T audioName, params AudioMixParameter[] mixParameters) where T : Enum
+        {
+            return Play(audioName, loopCount: -1, mixParameters);
+        }
+
+        public AudioSource PlayLoop<T>(T audioName, IEnumerable<AudioMixParameter> mixParameters) where T : Enum
+        {
+            return Play(audioName, loopCount: -1, mixParameters);
+        }
+
+        public AudioSource PlayAt<T>(T audioName, Vector3 position, params AudioMixParameter[] mixParameters) where T : Enum
+        {
+            return PlayAt(audioName, position, loopCount: 0, mixParameters);
+        }
+
+        public AudioSource PlayAt<T>(T audioName, Vector3 position, IEnumerable<AudioMixParameter> mixParameters) where T : Enum
+        {
+            return PlayAt(audioName, position, loopCount: 0, mixParameters);
+        }
+
+        public AudioSource PlayAt<T>(T audioName, Vector3 position, sbyte loopCount, params AudioMixParameter[] mixParameters) where T : Enum
+        {
+            return PlayAt(audioName, position, loopCount, (IEnumerable<AudioMixParameter>)mixParameters);
+        }
+
+        public AudioSource PlayAt<T>(T audioName, Vector3 position, sbyte loopCount, IEnumerable<AudioMixParameter> mixParameters) where T : Enum
+        {
+            var clip = FindClip(audioName);
+            StopAll();
+
+            AudioSource src = Get();
+            src.transform.position = position;
+            ConfigureSource(src, clip, loopCount, follow: null, mixParameters);
+            src.Play();
+            StartReleaseRoutine(src, loopCount);
+            return src;
+        }
+
+        public AudioSource PlayFollow<T>(T audioName, Transform follow, params AudioMixParameter[] mixParameters) where T : Enum
+        {
+            return PlayFollow(audioName, follow, loopCount: 0, mixParameters);
+        }
+
+        public AudioSource PlayFollow<T>(T audioName, Transform follow, IEnumerable<AudioMixParameter> mixParameters) where T : Enum
+        {
+            return PlayFollow(audioName, follow, loopCount: 0, mixParameters);
+        }
+
+        public AudioSource PlayFollow<T>(T audioName, Transform follow, sbyte loopCount, params AudioMixParameter[] mixParameters) where T : Enum
+        {
+            return PlayFollow(audioName, follow, loopCount, (IEnumerable<AudioMixParameter>)mixParameters);
+        }
+
+        public AudioSource PlayFollow<T>(T audioName, Transform follow, sbyte loopCount, IEnumerable<AudioMixParameter> mixParameters) where T : Enum
+        {
+            var clip = FindClip(audioName);
+            StopAll();
+
+            AudioSource source = Get();
+            ConfigureSource(source, clip, loopCount, follow, mixParameters);
+            source.Play();
+            StartReleaseRoutine(source, loopCount);
+            return source;
+        }
+
+        public AudioSource PlayLoopFollow<T>(T audioName, Transform follow, params AudioMixParameter[] mixParameters) where T : Enum
+        {
+            return PlayFollow(audioName, follow, loopCount: -1, mixParameters);
+        }
+
+        public AudioSource PlayLoopFollow<T>(T audioName, Transform follow, IEnumerable<AudioMixParameter> mixParameters) where T : Enum
+        {
+            return PlayFollow(audioName, follow, loopCount: -1, mixParameters);
+        }
+
+        public void Stop(AudioSource source)
+        {
+            if (source == null)
+                return;
+
+            if (_active.Contains(source))
+                Release(source);
+        }
+
+        public void Stop(float fadeDuration)
+        {
+            if (fadeDuration <= 0f)
+            {
+                StopAll();
+                return;
+            }
+
+            if (_active.Count == 0)
+                return;
+
+            var tmp = RentActiveSnapshot();
+            foreach (var src in tmp)
+            {
+                if (src == null)
+                    continue;
+
+                // Invalidate auto-release routines then fade.
+                var version = MarkSourceUsed(src);
+                FadeOutAndStopAsync(src, version, fadeDuration).Forget();
+            }
+            ReturnActiveSnapshot(tmp);
+        }
+
+        public void StopAll()
+        {
+            ReleaseAllActive();
+        }
+        #endregion
 
         private float GetSourceVolumeFactor(AudioSource src)
         {
@@ -183,125 +392,12 @@ namespace BattleTurn.AudioManager.Runtime
             }
         }
 
-        private static void FillAllExposedParameterNames(List<string> buffer)
-        {
-            const string fullTypeName = "BattleTurn.AudioManager.Runtime.AudioMixerExposedParameter";
-            var type = ResolveType(fullTypeName);
-            if (type == null)
-                return;
-
-            var fields = type.GetFields(BindingFlags.Public | BindingFlags.Static);
-
-            foreach (var field in fields)
-            {
-                if (field.FieldType != typeof(string))
-                    continue;
-
-                if (!field.IsLiteral || field.IsInitOnly)
-                    continue;
-
-                if (field.GetRawConstantValue() is string value)
-                    buffer.Add(value);
-            }
-        }
-
-        private static System.Type ResolveType(string fullTypeName)
-        {
-            foreach (var asm in System.AppDomain.CurrentDomain.GetAssemblies())
-            {
-                var t = asm.GetType(fullTypeName, throwOnError: false);
-                if (t != null)
-                    return t;
-            }
-
-            return null;
-        }
-
-        public AudioSource Play<T>(T audioName, params AudioMixParameter[] mixParameters) where T : System.Enum
-        {
-            return Play(audioName, loopCount: 0, mixParameters);
-        }
-
-        public AudioSource Play<T>(T audioName, IEnumerable<AudioMixParameter> mixParameters) where T : System.Enum
-        {
-            return Play(audioName, loopCount: 0, mixParameters);
-        }
-
-        public AudioSource Play<T>(T audioName, sbyte loopCount, params AudioMixParameter[] mixParameters) where T : System.Enum
-        {
-            return Play(audioName, loopCount, (IEnumerable<AudioMixParameter>)mixParameters);
-        }
-
-        public AudioSource Play<T>(T audioName, sbyte loopCount, IEnumerable<AudioMixParameter> mixParameters) where T : System.Enum
-        {
-            var clip = FindClip(audioName);
-            if (clip == null)
-            {
-                Debug.LogWarning("MusicManager: Tried to play a null AudioClip.");
-                return null;
-            }
-
-            // MusicManager plays a single music track at a time.
-            StopAll();
-
-            var src = Get();
-            ConfigureSource(src, clip, loopCount, mixParameters);
-            src.Play();
-            StartReleaseRoutine(src, loopCount);
-            return src;
-        }
-
-        public AudioSource PlayOneShot<T>(T audioName, params AudioMixParameter[] mixParameters) where T : System.Enum
-        {
-            return PlayOneShot(audioName, (IEnumerable<AudioMixParameter>)mixParameters);
-        }
-
-        public AudioSource PlayOneShot<T>(T audioName, IEnumerable<AudioMixParameter> mixParameters) where T : System.Enum
-        {
-            var clip = FindClip(audioName);
-            if (clip == null)
-            {
-                Debug.LogWarning("MusicManager: Tried to play a null AudioClip.");
-                return null;
-            }
-
-            var src = Get();
-            ConfigureSource(src, clip, loopCount: 0, mixParameters);
-            src.PlayOneShot(clip);
-            StartReleaseRoutine(src, loopCount: 0);
-            return src;
-        }
-
-        public AudioSource PlayLoop<T>(T audioName, params AudioMixParameter[] mixParameters) where T : System.Enum
-        {
-            return Play(audioName, loopCount: -1, mixParameters);
-        }
-
-        public AudioSource PlayLoop<T>(T audioName, IEnumerable<AudioMixParameter> mixParameters) where T : System.Enum
-        {
-            return Play(audioName, loopCount: -1, mixParameters);
-        }
-
-        private AudioClip FindClip<T>(T audioName) where T : System.Enum
+        private AudioClip FindClip<T>(T audioName) where T : Enum
         {
             if (_musicData == null)
-                return null;
+                throw new NullReferenceException("MusicManager: AudioData is not assigned.");
 
             return _musicData[audioName.ToString()];
-        }
-
-        public void Stop(AudioSource source)
-        {
-            if (source == null)
-                return;
-
-            if (_active.Contains(source))
-                Release(source);
-        }
-
-        public void StopAll()
-        {
-            ReleaseAllActive();
         }
 
         private void ReleaseAllActive()
@@ -381,13 +477,7 @@ namespace BattleTurn.AudioManager.Runtime
             src.gameObject.SetActive(false);
         }
 
-        private static void SetParentAndResetLocal(Transform child, Transform parent)
-        {
-            child.SetParent(parent, worldPositionStays: false);
-            child.localPosition = Vector3.zero;
-        }
-
-        private void ConfigureSource(AudioSource src, AudioClip clip, sbyte loopCount, IEnumerable<AudioMixParameter> mixParameters)
+        private void ConfigureSource(AudioSource src, AudioClip clip, sbyte loopCount, Transform follow, IEnumerable<AudioMixParameter> mixParameters)
         {
             if (src == null)
                 return;
@@ -401,31 +491,12 @@ namespace BattleTurn.AudioManager.Runtime
             if (_musicData?.MixerGroup != null)
                 src.outputAudioMixerGroup = _musicData.MixerGroup;
 
+            if (follow != null)
+                SetParentAndResetLocal(src.transform, follow);
+            else
+                SetParentAndResetLocal(src.transform, transform);
+
             HandleMixerParameters(mixParameters);
-        }
-
-        public void Stop(float fadeDuration)
-        {
-            if (fadeDuration <= 0f)
-            {
-                StopAll();
-                return;
-            }
-
-            if (_active.Count == 0)
-                return;
-
-            var tmp = RentActiveSnapshot();
-            foreach (var src in tmp)
-            {
-                if (src == null)
-                    continue;
-
-                // Invalidate auto-release routines then fade.
-                var version = MarkSourceUsed(src);
-                FadeOutAndStopAsync(src, version, fadeDuration).Forget();
-            }
-            ReturnActiveSnapshot(tmp);
         }
 
         private async UniTask FadeOutAndStopAsync(AudioSource src, int version, float fadeDuration)

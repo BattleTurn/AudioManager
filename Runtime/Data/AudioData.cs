@@ -41,10 +41,13 @@ namespace BattleTurn.AudioManager.Runtime
             }
 
             if (audioContentDict.TryGetValue(audioName, out clip))
-                return clip != null;
+            {
+                if (clip == null)
+                    throw new EmptyAudioClipException(audioName);
+                return true;
+            }
 
-            clip = null;
-            return false;
+            throw new EmptyAudioClipException(audioName);
         }
 
         private void EnsureInitialized()
