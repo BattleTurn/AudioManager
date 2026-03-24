@@ -25,7 +25,7 @@ namespace BattleTurn.AudioManager.Editor
             using (new EditorGUILayout.HorizontalScope())
             {
                 GUILayout.FlexibleSpace();
-                if (GUILayout.Button("Build AudioName Enum", GUILayout.Width(180)))
+                if (GUILayout.Button("Build AudioData", GUILayout.Width(180)))
                 {
                     serializedObject.ApplyModifiedProperties();
                     AudioNameEnumGenerator.BuildFromAllAudioDataAssets(force: true);
