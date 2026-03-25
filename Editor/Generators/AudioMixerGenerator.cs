@@ -1,3 +1,6 @@
+using System;
+using System.IO;
+using System.Linq;
 using UnityEngine;
 using UnityEditor;
 using UnityEngine.Audio;
@@ -16,57 +19,28 @@ namespace BattleTurn.AudioManager.Editor
         public static void EnsureGameMixerCreatedOnce()
         {
             var key = GetMixerCreatedOnceKey();
-            if (EditorPrefs.GetBool(key, defaultValue: false))
-                return;
-
-            // If mixer already exists (e.g., committed to repo), mark as done and don't try to recreate.
+            var alreadyMarkedCreated = EditorPrefs.GetBool(key, defaultValue: false);
             var existing = AssetDatabase.LoadMainAssetAtPath(GAME_MIXER_UNITY_PATH);
-            if (existing != null)
+
+            if (existing != null && IsMixerAssetHealthy(GAME_MIXER_UNITY_PATH, out _))
             {
-                EditorPrefs.SetBool(key, true);
+                if (!alreadyMarkedCreated)
+                    EditorPrefs.SetBool(key, true);
+
                 return;
             }
 
-            if (TryCreateGameMixerFromTemplate())
+            if (TryCreateGameMixerFromTemplate(forceOverwriteExisting: existing != null || alreadyMarkedCreated, logFailures: true))
                 EditorPrefs.SetBool(key, true);
         }
 
         [MenuItem("Tools/Audio/Create Game Mixer")]
         public static void CreateMixer()
         {
-            var templatePath = FindTemplateMixerPath();
-            if (string.IsNullOrEmpty(templatePath))
+            if (!TryCreateGameMixerFromTemplate(forceOverwriteExisting: true, logFailures: true))
             {
-                Debug.LogError("❌ Cannot find template mixer.");
                 return;
             }
-
-            string folder = System.IO.Path.GetDirectoryName(OUTPUT_PATH);
-            if (!AssetDatabase.IsValidFolder(folder))
-            {
-                CreateFolderRecursive(folder);
-            }
-
-            var existing = AssetDatabase.LoadMainAssetAtPath(OUTPUT_PATH);
-            if (existing != null)
-            {
-                if (!AssetDatabase.DeleteAsset(OUTPUT_PATH))
-                {
-                    Debug.LogError("❌ Cannot delete existing mixer at: " + OUTPUT_PATH);
-                    return;
-                }
-
-                AssetDatabase.Refresh();
-            }
-
-            if (!AssetDatabase.CopyAsset(templatePath, OUTPUT_PATH))
-            {
-                Debug.LogError($"❌ Cannot copy template mixer from '{templatePath}' to '{OUTPUT_PATH}'.");
-                return;
-            }
-
-            AssetDatabase.SaveAssets();
-            AssetDatabase.ImportAsset(OUTPUT_PATH, ImportAssetOptions.ForceUpdate);
 
             var newMixer = AssetDatabase.LoadAssetAtPath<AudioMixer>(OUTPUT_PATH);
             if (newMixer == null)
@@ -115,39 +89,61 @@ namespace BattleTurn.AudioManager.Editor
                 : "ℹ️ No AudioManager assets needed wiring (or GameMixer missing)");
         }
 
-        private static bool TryCreateGameMixerFromTemplate()
+        private static bool TryCreateGameMixerFromTemplate(bool forceOverwriteExisting, bool logFailures)
         {
             // Respect the one-time auto-create rule.
             var key = GetMixerCreatedOnceKey();
-            if (EditorPrefs.GetBool(key, defaultValue: false))
+            if (!forceOverwriteExisting && EditorPrefs.GetBool(key, defaultValue: false))
                 return false;
 
             Util.EnsureFolderExists(GENERATED_FOLDER_UNITY_PATH);
 
-            var template = AssetDatabase.LoadAssetAtPath<AudioMixer>(TEMPLATE_MIXER_UNITY_PATH);
-            if (template == null)
+            var templatePath = FindTemplateMixerPath();
+            if (string.IsNullOrEmpty(templatePath))
             {
-                Debug.LogWarning($"AudioMixerExposedParameterGenerator: Cannot find template mixer at '{TEMPLATE_MIXER_UNITY_PATH}'.");
+                if (logFailures)
+                    Debug.LogError("❌ Cannot find template mixer.");
+
                 return false;
             }
 
             var existing = AssetDatabase.LoadMainAssetAtPath(GAME_MIXER_UNITY_PATH);
-            if (existing != null)
-                return true;
-
-            if (!AssetDatabase.CopyAsset(TEMPLATE_MIXER_UNITY_PATH, GAME_MIXER_UNITY_PATH))
+            if (existing != null && !forceOverwriteExisting)
             {
-                Debug.LogWarning($"AudioMixerGenerator: Failed to copy template mixer from '{TEMPLATE_MIXER_UNITY_PATH}' to '{GAME_MIXER_UNITY_PATH}'.");
+                if (IsMixerAssetHealthy(GAME_MIXER_UNITY_PATH, out _))
+                    return true;
+
+                if (logFailures)
+                    Debug.LogWarning("AudioMixerGenerator: Existing GameMixer is invalid. Rebuilding it from the template.");
+            }
+
+            if (!CopyMixerFilePreservingMeta(templatePath, GAME_MIXER_UNITY_PATH, out var copyError))
+            {
+                if (logFailures)
+                    Debug.LogError(copyError);
+
                 return false;
             }
 
             AssetDatabase.SaveAssets();
-            AssetDatabase.ImportAsset(GAME_MIXER_UNITY_PATH, ImportAssetOptions.ForceUpdate);
+            AssetDatabase.ImportAsset(
+                GAME_MIXER_UNITY_PATH,
+                ImportAssetOptions.ForceUpdate | ImportAssetOptions.ForceSynchronousImport);
 
             var newMixer = AssetDatabase.LoadAssetAtPath<AudioMixer>(GAME_MIXER_UNITY_PATH);
             if (newMixer == null)
             {
-                Debug.LogWarning("AudioMixerGenerator: Copied GameMixer could not be loaded as AudioMixer.");
+                if (logFailures)
+                    Debug.LogError("AudioMixerGenerator: Copied GameMixer could not be loaded as AudioMixer.");
+
+                return false;
+            }
+
+            if (!IsMixerAssetHealthy(GAME_MIXER_UNITY_PATH, out var validationError))
+            {
+                if (logFailures)
+                    Debug.LogError($"AudioMixerGenerator: Generated GameMixer is invalid. {validationError}");
+
                 return false;
             }
 
@@ -179,6 +175,102 @@ namespace BattleTurn.AudioManager.Editor
         private static string GetMixerCreatedOnceKey()
         {
             return MIXER_CREATED_ONCE_KEY_PREFIX + Application.dataPath;
+        }
+
+        private static bool CopyMixerFilePreservingMeta(string sourceUnityPath, string destinationUnityPath, out string error)
+        {
+            error = null;
+
+            try
+            {
+                var sourceAbsolutePath = GetAbsolutePathFromUnityPath(sourceUnityPath);
+                var destinationAbsolutePath = GetAbsolutePathFromUnityPath(destinationUnityPath);
+                var destinationFolder = Path.GetDirectoryName(destinationAbsolutePath);
+
+                if (string.IsNullOrWhiteSpace(destinationFolder))
+                {
+                    error = $"AudioMixerGenerator: Invalid destination path '{destinationUnityPath}'.";
+                    return false;
+                }
+
+                Directory.CreateDirectory(destinationFolder);
+
+                if (!File.Exists(sourceAbsolutePath))
+                {
+                    error = $"AudioMixerGenerator: Template mixer file does not exist at '{sourceUnityPath}'.";
+                    return false;
+                }
+
+                File.Copy(sourceAbsolutePath, destinationAbsolutePath, overwrite: true);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                error = $"AudioMixerGenerator: Failed to copy template mixer. {ex.Message}";
+                return false;
+            }
+        }
+
+        private static bool IsMixerAssetHealthy(string mixerUnityPath, out string reason)
+        {
+            reason = null;
+
+            var mixer = AssetDatabase.LoadAssetAtPath<AudioMixer>(mixerUnityPath);
+            if (mixer == null)
+            {
+                reason = $"Cannot load AudioMixer at '{mixerUnityPath}'.";
+                return false;
+            }
+
+            var allAssets = AssetDatabase.LoadAllAssetsAtPath(mixerUnityPath);
+            var snapshotCount = allAssets.Count(asset => asset is AudioMixerSnapshot);
+            if (snapshotCount == 0)
+            {
+                reason = "No AudioMixerSnapshot sub-asset was imported.";
+                return false;
+            }
+
+            var groupCount = allAssets.Count(asset => asset is AudioMixerGroup);
+            if (groupCount == 0)
+            {
+                reason = "No AudioMixerGroup sub-asset was imported.";
+                return false;
+            }
+
+            var groups = mixer.FindMatchingGroups(string.Empty);
+            if (groups == null || groups.Length == 0)
+            {
+                reason = "The mixer does not expose any mixer groups after import.";
+                return false;
+            }
+
+            var hasMasterGroup = groups.Any(group => group != null && string.Equals(group.name, "Master", StringComparison.Ordinal));
+            if (!hasMasterGroup)
+            {
+                reason = "The imported mixer is missing the Master group.";
+                return false;
+            }
+
+            var serializedObject = new SerializedObject(mixer);
+            var snapshotsProperty = serializedObject.FindProperty("m_Snapshots");
+            if (snapshotsProperty == null || snapshotsProperty.arraySize == 0)
+            {
+                reason = "The mixer has no serialized snapshots.";
+                return false;
+            }
+
+            return true;
+        }
+
+        private static string GetAbsolutePathFromUnityPath(string unityPath)
+        {
+            if (unityPath.StartsWith("Assets/", StringComparison.Ordinal))
+                return Path.Combine(Application.dataPath, unityPath.Substring("Assets/".Length));
+
+            if (unityPath.StartsWith("Packages/", StringComparison.Ordinal))
+                return Path.GetFullPath(Path.Combine(Application.dataPath, "..", unityPath));
+
+            throw new ArgumentException($"Unsupported Unity asset path '{unityPath}'.", nameof(unityPath));
         }
 
         private static void CreateFolderRecursive(string path)
