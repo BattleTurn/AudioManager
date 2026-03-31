@@ -4,8 +4,8 @@ using UnityEngine;
 
 namespace BattleTurn.AudioManager.Editor
 {
-    [CustomEditor(typeof(Runtime.AudioManager))]
-    internal sealed class AudioManagerEditor : NaughtyInspector
+    [CustomEditor(typeof(Runtime.AudioDataManagerSO))]
+    internal sealed class AudioDataManagerEditor : NaughtyInspector
     {
         public override void OnInspectorGUI()
         {
@@ -19,10 +19,10 @@ namespace BattleTurn.AudioManager.Editor
 
                 if (GUILayout.Button("Build AudioData", GUILayout.Width(180)))
                 {
-                    var audioManager = (Runtime.AudioManager)target;
-                    var did = AudioNameEnumGenerator.BuildFromAllAudioDataAssets(force: true, audioManager);
+                    var audioManager = (Runtime.AudioDataManagerSO)target;
+                    var did = AudioNameEnumGenerator.BuildFromAllAudioDataAssets(audioManager);
                     Debug.Log(did
-                        ? "✅ Built AudioData enums (AudioName/SFXNameEnum/MFXNameEnum)"
+                        ? "✅ Built AudioData enums (AudioName/SFXNameEnum & MFXNameEnum)"
                         : "ℹ️ AudioData enums already up to date");
                 }
             }

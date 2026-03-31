@@ -26,11 +26,11 @@ namespace BattleTurn.AudioManager.Editor
                 if (string.IsNullOrEmpty(path) || !path.EndsWith(".asset", StringComparison.Ordinal))
                     continue;
 
-                var audioManager = AssetDatabase.LoadAssetAtPath<Runtime.AudioManager>(path);
+                var audioManager = AssetDatabase.LoadAssetAtPath<Runtime.AudioDataManagerSO>(path);
                 if (audioManager == null)
                     continue;
 
-                anyDid |= AudioNameEnumGenerator.BuildFromAllAudioDataAssets(force: false, audioManager);
+                anyDid |= AudioNameEnumGenerator.BuildFromAllAudioDataAssets(audioManager);
             }
 
             if (anyDid)

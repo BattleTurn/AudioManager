@@ -14,7 +14,7 @@ namespace BattleTurn.AudioManager.Editor
 
         public void OnPreprocessBuild(BuildReport report)
         {
-            var did = AudioNameEnumGenerator.BuildFromAllAudioDataAssets(force: false);
+            var did = AudioNameEnumGenerator.BuildFromAllAudioDataAssets();
             if (!did)
                 return;
 

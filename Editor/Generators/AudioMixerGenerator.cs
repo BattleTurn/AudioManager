@@ -10,7 +10,7 @@ namespace BattleTurn.AudioManager.Editor
     public static class AudioMixerGenerator
     {
         private const string TEMPLATE_MIXER_UNITY_PATH = "Packages/AudioManager/Editor/Template/AudioMixer.mixer";
-        private const string GENERATED_FOLDER_UNITY_PATH = "Assets/Plugins/BattleTurn/Generated/AudioManager";
+        private const string GENERATED_FOLDER_UNITY_PATH = "Assets/Plugins/BattleTurn/Generated/AudioDataManager";
         private const string GAME_MIXER_UNITY_PATH = GENERATED_FOLDER_UNITY_PATH + "/GameMixer.mixer";
         private const string MIXER_CREATED_ONCE_KEY_PREFIX = "BattleTurn.AudioManager.GameMixerCreatedOnce::";
 
@@ -51,10 +51,10 @@ namespace BattleTurn.AudioManager.Editor
 
             Debug.Log($"✅ Created AudioMixer at: {OUTPUT_PATH}");
 
-            AudioManagerMixerAutoRef.WireAllAudioManagerAssets(newMixer);
+            AudioManagerMixerAutoRef.WireAllAudioDataManagerAssets(newMixer);
 
-            AudioMixerExposedParameterGenerator.BuildFromMixerPath(OUTPUT_PATH, force: true);
-            AudioMixerGroupNameGenerator.BuildFromMixerPath(OUTPUT_PATH, force: true);
+            AudioMixerExposedParameterGenerator.BuildFromMixerPath(OUTPUT_PATH);
+            AudioMixerGroupNameGenerator.BuildFromMixerPath(OUTPUT_PATH);
 
             // 6. Optional: focus asset
             Selection.activeObject = newMixer;
@@ -64,7 +64,7 @@ namespace BattleTurn.AudioManager.Editor
         [MenuItem("Tools/Audio/Update Mixer Exposed Parameter")]
         public static void UpdateMixerExposedParameter()
         {
-            var did = AudioMixerExposedParameterGenerator.BuildFromMixerPath(OUTPUT_PATH, force: true);
+            var did = AudioMixerExposedParameterGenerator.BuildFromMixerPath(OUTPUT_PATH);
             Debug.Log(did
                 ? "✅ Updated AudioMixerExposedParameter"
                 : "ℹ️ AudioMixerExposedParameter is already up to date or mixer missing");
@@ -73,17 +73,17 @@ namespace BattleTurn.AudioManager.Editor
         [MenuItem("Tools/Audio/Update Mixer Group Names")]
         public static void UpdateMixerGroupNames()
         {
-            var did = AudioMixerGroupNameGenerator.BuildFromMixerPath(OUTPUT_PATH, force: true);
+            var did = AudioMixerGroupNameGenerator.BuildFromMixerPath(OUTPUT_PATH);
             Debug.Log(did
                 ? "✅ Updated AudioMixerGroupName"
                 : "ℹ️ AudioMixerGroupName is already up to date or mixer missing");
         }
 
-        [MenuItem("Tools/Audio/Auto Wire AudioManager AudioMixer")]
-        public static void AutoWireAudioManagerMixer()
+        [MenuItem("Tools/Audio/Auto Wire AudioDataManager AudioMixer")]
+        public static void AutoWireAudioDataManagerMixer()
         {
             var mixer = AssetDatabase.LoadAssetAtPath<AudioMixer>(OUTPUT_PATH);
-            var did = AudioManagerMixerAutoRef.WireAllAudioManagerAssets(mixer);
+            var did = AudioManagerMixerAutoRef.WireAllAudioDataManagerAssets(mixer);
             Debug.Log(did
                 ? "✅ Wired AudioManager.audioMixer"
                 : "ℹ️ No AudioManager assets needed wiring (or GameMixer missing)");
@@ -147,7 +147,7 @@ namespace BattleTurn.AudioManager.Editor
                 return false;
             }
 
-            AudioManagerMixerAutoRef.WireAllAudioManagerAssets(newMixer);
+            AudioManagerMixerAutoRef.WireAllAudioDataManagerAssets(newMixer);
             return true;
         }
 
