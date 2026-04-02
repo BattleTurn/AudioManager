@@ -17,11 +17,11 @@ namespace BattleTurn.AudioManager.Runtime
                 if (content == null)
                     continue;
 
-                if (string.IsNullOrWhiteSpace(content.name))
+                if (string.IsNullOrWhiteSpace(content.Name))
                     continue;
 
-                if (!dict.ContainsKey(content.name))
-                    dict.Add(content.name, content.clip);
+                if (!dict.ContainsKey(content.Name))
+                    dict.Add(content.Name, content.Clip);
                 else
                     Debug.LogWarning($"AudioData: Duplicate audio content name '{content.name}'");
             }
