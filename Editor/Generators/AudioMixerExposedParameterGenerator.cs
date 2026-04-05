@@ -67,7 +67,7 @@ namespace BattleTurn.AudioManager.Editor
                 .OrderBy(n => n, StringComparer.Ordinal)
                 .ToList();
 
-            var source = GenerateFileUtil.GenerateSource(names, GENERATED_CLASS_NAME, () => "PARAM");
+            var source = GenerateFileUtil.GenerateStaticClass(names, GENERATED_CLASS_NAME, () => "PARAM");
             return GenerateFileUtil.GenerateFile(source, GENERATED_FILE_PATH);
         }
 

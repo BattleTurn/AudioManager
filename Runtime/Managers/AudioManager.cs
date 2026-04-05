@@ -10,27 +10,25 @@ using UnityEngine.Audio;
 
 namespace BattleTurn.AudioManager.Runtime
 {
-    public abstract class AudioManager<T> : MonoBehaviour where T : Enum
+    public abstract class AudioManager : MonoBehaviour
     {
-        private static readonly string VOLUME_KEY = typeof(T).Name;
+        private readonly FloatReactiveProperty _volume = new FloatReactiveProperty(1f);
 
-        private static readonly FloatReactiveProperty _volume = new FloatReactiveProperty(1f);
-
-        [SerializeField] private byte _prewarmCount = 2;
+        [SerializeField] private byte _prewarmAudioSourceAmount = 2;
         [Expandable]
         [SerializeField] protected AudioDataManagerSO audioManager;
 
-        private Pool<AudioSource> _pool;
+        public abstract string Key { get; }
 
         protected abstract AudioDataBaseSO audioData { get; }
 
         private readonly List<string> _parameterNamesCache = new();
-        private readonly HashSet<AudioSource> _channel = new();
-        private readonly Dictionary<AudioSource, float> _audioVolumeFactor = new();
+        private readonly Dictionary<string, Channel> _channelMap = new();
+        private readonly Dictionary<string, string> _categoryByAudioName = new();
         private readonly Dictionary<string, float> _originalMixerValues = new();
 
         #region PROPERTIES
-        public static float Volume
+        public float Volume
         {
             get => _volume.Value;
             set => SetVolume(value);
@@ -40,18 +38,15 @@ namespace BattleTurn.AudioManager.Runtime
         #region UNITY
         protected virtual void Awake()
         {
-            _pool = new Pool<AudioSource>(CreateNewSource, Release, ActivateChannel);
-
             SetupVolume();
 
             CacheOriginalMixerValues();
-            if (_prewarmCount > 0)
-                Prewarm(_prewarmCount);
         }
 
         private void CacheOriginalMixerValues()
         {
             _originalMixerValues.Clear();
+            _parameterNamesCache.Clear();
 
             AudioMixer mixer = audioData?.MixerGroup?.audioMixer;
             if (mixer == null)
@@ -77,7 +72,7 @@ namespace BattleTurn.AudioManager.Runtime
 
         private void SetupVolume()
         {
-            _volume.Value = Mathf.Clamp01(PlayerPrefs.GetFloat(VOLUME_KEY, 1f));
+            _volume.Value = Mathf.Clamp01(PlayerPrefs.GetFloat(Key, 1f));
 
             _volume
                 .DistinctUntilChanged()
@@ -87,32 +82,30 @@ namespace BattleTurn.AudioManager.Runtime
 
         private void ApplyVolumeToActive(float value)
         {
-            if (_channel.Count == 0)
+            if (_channelMap.Count == 0)
                 return;
 
-            foreach (var src in _channel)
+            foreach (Channel channel in _channelMap.Values)
             {
-                if (src != null)
-                    src.volume = value * GetSourceVolumeFactor(src);
+                if (channel != null)
+                {
+                    channel.SetVolume(value);
+                }
             }
         }
         #endregion
 
         #region PUBLIC METHODS
-        public void Prewarm(int count)
-        {
-            for (var i = 0; i < count; i++)
-            {
-                Release(CreateNewSource());
-            }
-        }
 
         public void StopAll()
         {
-            ReleaseAllActive();
+            foreach (Channel channel in _channelMap.Values)
+            {
+                channel.StopAll();
+            }
         }
 
-        public void StopAllWithFade(float fadeDuration)
+        public void StopAll(float fadeDuration)
         {
             if (fadeDuration <= 0f)
             {
@@ -120,12 +113,12 @@ namespace BattleTurn.AudioManager.Runtime
                 return;
             }
 
-            if (_channel.Count == 0)
+            if (_channelMap.Count == 0)
                 return;
 
-            foreach (AudioSource source in _channel)
+            foreach (Channel channel in _channelMap.Values)
             {
-                FadeOutAndStopAsync(source, fadeDuration).Forget();
+                channel.StopAll(fadeDuration);
             }
         }
 
@@ -134,271 +127,137 @@ namespace BattleTurn.AudioManager.Runtime
             if (source == null)
                 return;
 
-            if (_channel.Contains(source))
-                _pool.Release(source);
+            foreach (Channel channel in _channelMap.Values)
+            {
+                if (channel.ActiveSources.Contains(source))
+                {
+                    channel.Stop(source);
+                    break;
+                }
+            }
         }
 
-        public AudioSource Play(T audioName, params AudioMixParameter[] mixParameters)
+        public void Stop(AudioSource source, float fadeDuration)
         {
-            return Play(audioName, loopCount: 0, mixParameters);
+            if (source == null)
+                return;
+
+            foreach (Channel channel in _channelMap.Values)
+            {
+                if (channel.ActiveSources.Contains(source))
+                {
+                    channel.Stop(source, fadeDuration);
+                    break;
+                }
+            }
         }
 
-        public AudioSource Play(T audioName, IEnumerable<AudioMixParameter> mixParameters)
+        public AudioSource Play(string audioName, params AudioMixParameter[] mixParameters)
         {
-            return Play(audioName, loopCount: 0, mixParameters);
+            return Play(audioName, (IEnumerable<IParameterizable>)null, mixParameters);
         }
 
-        public AudioSource Play(T audioName, byte loopCount, params AudioMixParameter[] mixParameters)
+        public AudioSource Play(string audioName, IEnumerable<IParameterizable> audioParameters, params AudioMixParameter[] mixParameters)
         {
-            return Play(audioName, loopCount, (IEnumerable<AudioMixParameter>)mixParameters);
+            string categoryName = ResolveCategoryName(audioName);
+            return Play(categoryName, audioName, audioParameters, mixParameters);
         }
 
-        public AudioSource Play(T audioName, short loopCount, IEnumerable<AudioMixParameter> mixParameters)
+        public AudioSource Play<T>(string audioName, IEnumerable<IParameterizable> audioParameters, params AudioMixParameter[] mixParameters)
         {
-            var clip = FindClip(audioName);
-
-            // AudioManager plays a single audio track at a time.
-            StopAll();
-
-            AudioSource src = _pool.Get();
-            ConfigureSource(src, clip, loopCount, follow: null, mixParameters);
-            src.Play();
-            StartPlayLoop(src, loopCount);
-            return src;
+            return Play(typeof(T).Name, audioName, audioParameters, mixParameters);
         }
 
-        public AudioSource PlayLoop(T audioName, params AudioMixParameter[] mixParameters)
+        public AudioSource PlayOneShot(string audioName, params AudioMixParameter[] mixParameters)
         {
-            return Play(audioName, loopCount: -1, mixParameters);
+            return Play(audioName, new IParameterizable[] { new OneShotParameter() }, mixParameters);
         }
 
-        public AudioSource PlayLoop(T audioName, IEnumerable<AudioMixParameter> mixParameters)
+        public AudioSource PlayAt(string audioName, Vector3 position, params AudioMixParameter[] mixParameters)
         {
-            return Play(audioName, loopCount: -1, mixParameters);
+            return Play(audioName, new IParameterizable[] { new WorldPositionParameter(position) }, mixParameters);
         }
 
-        public AudioSource PlayOneShot(T audioName, params AudioMixParameter[] mixParameters)
+        public AudioSource PlayFollow(string audioName, Transform follow, params AudioMixParameter[] mixParameters)
         {
-            return PlayOneShot(audioName, (IEnumerable<AudioMixParameter>)mixParameters);
-        }
-
-        public AudioSource PlayOneShot(T audioName, IEnumerable<AudioMixParameter> mixParameters)
-        {
-            var clip = FindClip(audioName);
-
-            AudioSource source = _pool.Get();
-            ConfigureSource(source, clip, loopCount: 0, follow: null, mixParameters);
-            source.PlayOneShot(clip);
-            StartPlayLoop(source, loopCount: 0);
-            return source;
-        }
-
-        public AudioSource PlayAt(T audioName, Vector3 position, params AudioMixParameter[] mixParameters)
-        {
-            return PlayAt(audioName, position, loopCount: 0, mixParameters);
-        }
-
-        public AudioSource PlayAt(T audioName, Vector3 position, IEnumerable<AudioMixParameter> mixParameters)
-        {
-            return PlayAt(audioName, position, loopCount: 0, mixParameters);
-        }
-
-        public AudioSource PlayAt(T audioName, Vector3 position, byte loopCount, params AudioMixParameter[] mixParameters)
-        {
-            return PlayAt(audioName, position, loopCount, (IEnumerable<AudioMixParameter>)mixParameters);
-        }
-
-        private AudioSource PlayAt(T audioName, Vector3 position, short loopCount, IEnumerable<AudioMixParameter> mixParameters)
-        {
-            var clip = FindClip(audioName);
-            StopAll();
-
-            AudioSource source = _pool.Get();
-            source.transform.position = position;
-            ConfigureSource(source, clip, loopCount, follow: null, mixParameters);
-            source.Play();
-            StartPlayLoop(source, loopCount);
-            return source;
-        }
-
-        public AudioSource PlayFollow(T audioName, Transform follow, params AudioMixParameter[] mixParameters)
-        {
-            return PlayFollow(audioName, follow, loopCount: 0, mixParameters);
-        }
-
-        public AudioSource PlayFollow(T audioName, Transform follow, IEnumerable<AudioMixParameter> mixParameters)
-        {
-            return PlayFollow(audioName, follow, loopCount: 0, mixParameters);
-        }
-
-        public AudioSource PlayFollow(T audioName, Transform follow, byte loopCount, params AudioMixParameter[] mixParameters)
-        {
-            return PlayFollow(audioName, follow, loopCount, (IEnumerable<AudioMixParameter>)mixParameters);
-        }
-
-        private AudioSource PlayFollow(T audioName, Transform follow, short loopCount, IEnumerable<AudioMixParameter> mixParameters)
-        {
-            var clip = FindClip(audioName);
-            StopAll();
-
-            AudioSource source = _pool.Get();
-            ConfigureSource(source, clip, loopCount, follow, mixParameters);
-            source.Play();
-            StartPlayLoop(source, loopCount);
-            return source;
-        }
-
-        public AudioSource PlayLoopFollow(T audioName, Transform follow, params AudioMixParameter[] mixParameters)
-        {
-            return PlayFollow(audioName, follow, loopCount: -1, mixParameters);
-        }
-
-        public AudioSource PlayLoopFollow(T audioName, Transform follow, IEnumerable<AudioMixParameter> mixParameters)
-        {
-            return PlayFollow(audioName, follow, loopCount: -1, mixParameters);
+            return Play(audioName, new IParameterizable[] { new FollowParameter(follow) }, mixParameters);
         }
         #endregion
 
-        private async UniTask FadeOutAndStopAsync(AudioSource src, float fadeDuration)
+        private AudioSource Play(string categoryName, string audioName, IEnumerable<IParameterizable> audioParameters, IEnumerable<AudioMixParameter> mixParameters)
         {
-            fadeDuration = Mathf.Max(0.0001f, fadeDuration);
+            if (string.IsNullOrWhiteSpace(audioName))
+                throw new ArgumentException("Audio name cannot be null or empty.", nameof(audioName));
 
-            var elapsed = 0f;
-            var startFactor = GetSourceVolumeFactor(src);
-
-            await UniTask.Yield(PlayerLoopTiming.Update);
-
-            while (IsValid(src) && elapsed < fadeDuration)
-            {
-                elapsed += Time.deltaTime;
-                var t = Mathf.Clamp01(elapsed / fadeDuration);
-                SetSourceVolumeFactor(src, Mathf.Lerp(startFactor, 0f, t));
-                await UniTask.Yield(PlayerLoopTiming.Update);
-            }
-
-            if (!IsValid(src))
-                return;
-
-            SetSourceVolumeFactor(src, 0f);
-            _pool.Release(src);
-        }
-
-        private AudioClip FindClip(T audioName)
-        {
-            if (audioData == null)
-                throw new NullReferenceException("AudioData is not assigned.");
-
-            return audioData[audioName.ToString()];
-        }
-
-        private void StartPlayLoop(AudioSource source, short loopCount)
-        {
-            if (source == null)
-                return;
-
-            if (loopCount > 0)
-            {
-                // loopCount is the number of extra loops after the first play.
-                ReleaseAfterLoopCountAsync(source, loopCount).Forget();
-                return;
-            }
-            else if (loopCount < 0)
-            {
-                // Negative loopCount indicates infinite looping, so we don't need to track it for release.
-                return;
-            }
-
-            ReleaseWhenFinishedAsync(source).Forget();
-        }
-
-        private async UniTask ReleaseAfterLoopCountAsync(AudioSource source, short loopCount)
-        {
-            // loopCount is the number of extra loops after the first play.
-            var remainingLoops = Mathf.Max(0, loopCount);
-
-            await UniTask.Yield(PlayerLoopTiming.Update);
-
-            while (IsValid(source))
-            {
-                while (IsValid(source) && source.isPlaying)
-                    await UniTask.Yield(PlayerLoopTiming.Update);
-
-                if (!IsValid(source))
-                    return;
-
-                if (remainingLoops <= 0)
-                    break;
-
-                remainingLoops--;
-                source.Play();
-                await UniTask.Yield(PlayerLoopTiming.Update);
-            }
-
-            if (IsValid(source))
-                _pool.Release(source);
-        }
-
-        private async UniTask ReleaseWhenFinishedAsync(AudioSource source)
-        {
-            await UniTask.Yield(PlayerLoopTiming.Update);
-
-            while (IsValid(source) && source.isPlaying)
-                await UniTask.Yield(PlayerLoopTiming.Update);
-
-            if (IsValid(source))
-                _pool.Release(source);
-        }
-
-        private bool IsValid(AudioSource source)
-        {
-            return source != null
-                   && _channel.Contains(source);
-        }
-
-        private void ConfigureSource(AudioSource source, AudioClip clip, short loopCount, Transform follow, IEnumerable<AudioMixParameter> mixParameters)
-        {
-            if (source == null)
-                return;
-
-            source.clip = clip;
-            source.pitch = 1f;
-            SetSourceVolumeFactor(source, 1f);
-            source.loop = loopCount < 0;
-            source.playOnAwake = false;
-
-            if (audioData?.MixerGroup != null)
-                source.outputAudioMixerGroup = audioData.MixerGroup;
-
-            if (follow != null)
-                ResetLocal(source.transform, follow);
-            else
-                ResetLocal(source.transform, transform);
-
-            if (mixParameters.Count() <= 0)
-            {
-                foreach (KeyValuePair<string, float> originalParameterPair in _originalMixerValues)
-                    audioData?.MixerGroup?.audioMixer?.SetFloat(originalParameterPair.Key, originalParameterPair.Value);
-                return;
-            }
             HandleMixerParameters(mixParameters);
+
+            if (!_channelMap.TryGetValue(categoryName, out Channel channel))
+            {
+                channel = CreateChannel(categoryName);
+            }
+
+            return channel.Play(audioName, audioParameters);
         }
 
-        private float GetSourceVolumeFactor(AudioSource src)
+        private Channel CreateChannel(string categoryName)
         {
-            return _audioVolumeFactor.TryGetValue(src, out var factor) ? factor : 1f;
+            AudioCategoryBaseSO category = audioData[categoryName];
+            Channel channel = new Channel(_prewarmAudioSourceAmount, audioData.MixerGroup, category, transform);
+            _channelMap[categoryName] = channel;
+            return channel;
         }
 
-        private void SetSourceVolumeFactor(AudioSource source, float factor)
+        private string ResolveCategoryName(string audioName)
         {
-            factor = Mathf.Clamp01(factor);
-            _audioVolumeFactor[source] = factor;
-            source.volume = _volume.Value * factor;
+            if (string.IsNullOrWhiteSpace(audioName))
+                throw new ArgumentException("Audio name cannot be null or empty.", nameof(audioName));
+
+            EnsureAudioNameMap();
+
+            if (_categoryByAudioName.TryGetValue(audioName, out string categoryName))
+                return categoryName;
+
+            throw new ArgumentOutOfRangeException(nameof(audioName), $"Audio '{audioName}' was not found in '{audioData?.Name}'.");
+        }
+
+        private void EnsureAudioNameMap()
+        {
+            if (_categoryByAudioName.Count > 0)
+                return;
+
+            AudioCategoryBaseSO[] categories = audioData?.AudioCategories;
+            if (categories == null)
+                return;
+
+            foreach (AudioCategoryBaseSO category in categories)
+            {
+                if (category?.AudioClips == null)
+                    continue;
+
+                foreach (AudioContentBaseSO audioContent in category.AudioClips)
+                {
+                    if (audioContent == null || string.IsNullOrWhiteSpace(audioContent.Name))
+                        continue;
+
+                    if (_categoryByAudioName.TryGetValue(audioContent.Name, out string existingCategoryName))
+                    {
+                        if (!string.Equals(existingCategoryName, category.Name, StringComparison.Ordinal))
+                        {
+                            Debug.LogWarning($"Duplicate audio name '{audioContent.Name}' found in categories '{existingCategoryName}' and '{category.Name}'. Using '{existingCategoryName}'.", this);
+                        }
+
+                        continue;
+                    }
+
+                    _categoryByAudioName[audioContent.Name] = category.Name;
+                }
+            }
         }
 
         private void HandleMixerParameters(IEnumerable<AudioMixParameter> mixParameters)
         {
             AudioMixer mixer = audioData?.MixerGroup?.audioMixer;
-            if (mixer == null)
+            if (mixer == null || mixParameters == null)
                 return;
 
             foreach (var param in mixParameters)
@@ -407,75 +266,19 @@ namespace BattleTurn.AudioManager.Runtime
             }
         }
 
-        private void ReleaseAllActive()
-        {
-            if (_channel.Count == 0)
-                return;
-
-            foreach (AudioSource source in _channel)
-            {
-                _pool.Release(source);
-            }
-            _channel.Clear();
-        }
-
-        private void Release(AudioSource source)
-        {
-            if (source == null)
-                return;
-
-            _channel.Remove(source);
-            ResetChannel(source);
-            ResetLocal(source.transform, transform);
-            source.gameObject.SetActive(false);
-        }
-
-        private void ResetChannel(AudioSource source)
-        {
-            source.Stop();
-            source.clip = null;
-            source.loop = false;
-            source.pitch = 1f;
-            _audioVolumeFactor.Remove(source);
-            source.volume = _volume.Value;
-        }
-
-        private void ActivateChannel(AudioSource source)
-        {
-            source.gameObject.SetActive(true);
-            _channel.Add(source);
-        }
-
-        private AudioSource CreateNewSource()
-        {
-            var go = new GameObject("PooledMusicSource");
-            go.transform.SetParent(transform, worldPositionStays: false);
-            go.SetActive(true);
-
-            var src = go.AddComponent<AudioSource>();
-            src.playOnAwake = false;
-            return src;
-        }
-
-        private static void ResetLocal(Transform child, Transform parent)
-        {
-            child.SetParent(parent, worldPositionStays: false);
-            child.localPosition = Vector3.zero;
-        }
-
-        private static void SetVolume(float value)
+        private void SetVolume(float value)
         {
             var clamped = Mathf.Clamp01(value);
             if (Mathf.Approximately(_volume.Value, clamped))
                 return;
 
             _volume.Value = clamped;
-            PlayerPrefs.SetFloat(VOLUME_KEY, clamped);
+            PlayerPrefs.SetFloat(Key, clamped);
         }
 
-        private static void FillAllExposedParameterNames(List<string> buffer)
+        private void FillAllExposedParameterNames(List<string> buffer)
         {
-            const string fullTypeName = "BattleTurn.AudioManager.Runtime.AudioMixerExposedParameter";
+            const string fullTypeName = NameSpaceConstants.AUDIO_MANAGER + ".AudioMixerExposedParameter";
             var type = ResolveType(fullTypeName);
             if (type == null)
                 return;
@@ -495,7 +298,7 @@ namespace BattleTurn.AudioManager.Runtime
             }
         }
 
-        private static Type ResolveType(string fullTypeName)
+        private Type ResolveType(string fullTypeName)
         {
             foreach (var asm in AppDomain.CurrentDomain.GetAssemblies())
             {

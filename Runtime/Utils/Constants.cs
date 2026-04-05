@@ -13,3 +13,8 @@ public static class AudioNameConstants
     public const string SFX = "SFX";
     public const string MFX = "MFX";
 }
+
+public static class NameSpaceConstants
+{
+    public const string AUDIO_MANAGER = "BattleTurn.AudioManager.Runtime";
+}

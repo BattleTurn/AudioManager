@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using NaughtyAttributes;
 using UnityEngine;
 using UnityEngine.Audio;
 
@@ -6,31 +7,49 @@ namespace BattleTurn.AudioManager.Runtime
 {
     public abstract class AudioDataBaseSO : ScriptableObject
     {
-        [SerializeField] private AudioContent[] _audioContents;
-        [SerializeField] private AudioMixerGroup _mixerGroup;
+        [Expandable]
+        [SerializeField] protected AudioCategoryBaseSO[] _audioCategories;
+        [SerializeField] protected AudioMixerGroup _mixerGroup;
 
-        private Dictionary<string, AudioClip> _audioContentDict;
+        private Dictionary<string, AudioCategoryBaseSO> _audioCategoryDict;
 
+        #region PROPERTIES
         public abstract string Name { get; }
-        public AudioContent[] AudioContents => _audioContents;
+        public AudioCategoryBaseSO[] AudioCategories => _audioCategories;
         public AudioMixerGroup MixerGroup => _mixerGroup;
+        #endregion
 
-        public AudioClip this[string audioName]
+        public AudioCategoryBaseSO this[string categoryName]
         {
             get
             {
-                if (TryGetClip(audioName, out var clip))
+                _audioCategoryDict ??= AudioDataHelper.BuildCategoryDictionary(_audioCategories);
+                return _audioCategoryDict[categoryName];
+            }
+        }
+
+        public AudioClip this[string categoryName, string audioName]
+        {
+            get
+            {
+                if (TryGetClip(categoryName, audioName, out var clip))
                     return clip;
 
-                Debug.LogWarning($"AudioData: Audio name '{audioName}' not found");
+                Debug.LogWarning($"AudioData: Audio name '{audioName}' in category '{categoryName}' not found");
                 return null;
             }
         }
 
-        public bool TryGetClip(string audioName, out AudioClip clip)
+        public bool TryGetClip(string categoryName, string audioName, out AudioClip clip)
         {
-            _audioContentDict ??= AudioDataHelper.BuildDictionary(_audioContents);
-            return AudioDataHelper.TryGetClip(audioName, _audioContentDict, out clip);
+            _audioCategoryDict ??= AudioDataHelper.BuildCategoryDictionary(_audioCategories);
+            if (_audioCategoryDict.TryGetValue(categoryName, out var category))
+                return AudioDataHelper.TryGetClip(audioName, category, out clip);
+            else
+            {
+                clip = null;
+                return false;
+            }
         }
     }
 }

@@ -30,6 +30,7 @@ namespace BattleTurn.AudioManager.Runtime
         #region PROPERTIES
         public AudioDataBaseSO SFXData => TryGetAudioData(AudioNameConstants.SFX, out var sfxData) ? sfxData : null;
         public AudioDataBaseSO MFXData => TryGetAudioData(AudioNameConstants.MFX, out var musicData) ? musicData : null;
+        public IReadOnlyList<AudioDataBaseSO> AudioDatas => _audioDatas;
         public AudioMixer AudioMixer => _audioMixer;
         public AudioMixerGroup MasterGroup => _masterGroup;
 

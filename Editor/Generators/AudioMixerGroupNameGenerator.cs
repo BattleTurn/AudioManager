@@ -1,7 +1,6 @@
 using System;
 using System.IO;
 using System.Linq;
-using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Audio;
@@ -60,7 +59,7 @@ namespace BattleTurn.AudioManager.Editor
                 .OrderBy(n => n, StringComparer.Ordinal)
                 .ToList();
 
-            var source = GenerateFileUtil.GenerateSource(names, GENERATED_CLASS_NAME, () => "GROUP");
+            var source = GenerateFileUtil.GenerateStaticClass(names, GENERATED_CLASS_NAME, () => "GROUP");
             return GenerateFileUtil.GenerateFile(source, GENERATED_FILE_PATH);
         }
 
