@@ -43,7 +43,7 @@ namespace BattleTurn.AudioManager.Editor
                         isValid = false;
                         break;
                     }
-                    if (Util.CSharpKeywords.Contains(content.name))
+                    if (CodeGenerationUtils.CSharpKeywords.Contains(content.name))
                     {
                         EditorGUILayout.HelpBox($"Audio content name is a C# keyword: {content.name}", MessageType.Error);
                         isValid = false;

@@ -33,6 +33,8 @@ namespace BattleTurn.AudioManager.Runtime
             get => _volume.Value;
             set => SetVolume(value);
         }
+
+        public string AudioDataName => audioData?.Name;
         #endregion
 
         #region UNITY
@@ -163,6 +165,11 @@ namespace BattleTurn.AudioManager.Runtime
             return Play(categoryName, audioName, audioParameters, mixParameters);
         }
 
+        public AudioSource Play(string categoryName, string audioName, IEnumerable<IParameterizable> audioParameters, params AudioMixParameter[] mixParameters)
+        {
+            return Play(categoryName, audioName, audioParameters, (IEnumerable<AudioMixParameter>)mixParameters);
+        }
+
         public AudioSource Play<T>(string audioName, IEnumerable<IParameterizable> audioParameters, params AudioMixParameter[] mixParameters)
         {
             return Play(typeof(T).Name, audioName, audioParameters, mixParameters);
@@ -186,6 +193,9 @@ namespace BattleTurn.AudioManager.Runtime
 
         private AudioSource Play(string categoryName, string audioName, IEnumerable<IParameterizable> audioParameters, IEnumerable<AudioMixParameter> mixParameters)
         {
+            if (string.IsNullOrWhiteSpace(categoryName))
+                throw new ArgumentException("Category name cannot be null or empty.", nameof(categoryName));
+
             if (string.IsNullOrWhiteSpace(audioName))
                 throw new ArgumentException("Audio name cannot be null or empty.", nameof(audioName));
 

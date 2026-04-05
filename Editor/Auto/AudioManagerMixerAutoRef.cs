@@ -8,7 +8,9 @@ namespace BattleTurn.AudioManager.Editor
 {
     internal static class AudioManagerMixerAutoRef
     {
-        private const string DEFAULT_AUDIO_DATA_MANAGER_ASSET_PATH = Util.GENERATED_FOLDER_PATH + "/AudioDataManager.asset";
+        private const string AUDIO_DATA_MANAGER_PATH = CodeGenerationUtils.GENERATED_SCRIPTABLE_OBJECT_PATH
+        + "/Managers";
+        private const string DEFAULT_AUDIO_DATA_MANAGER_ASSET_PATH = AUDIO_DATA_MANAGER_PATH + "/" + nameof(AudioDataManagerSO) + ".asset";
 
         internal static bool WireAllAudioDataManagerAssets(AudioMixer mixer)
         {
@@ -190,7 +192,7 @@ namespace BattleTurn.AudioManager.Editor
             if (existing != null)
                 return existing;
 
-            EnsureFolderExists(Util.GENERATED_FOLDER_PATH);
+            EnsureFolderExists(AUDIO_DATA_MANAGER_PATH);
 
             var instance = ScriptableObject.CreateInstance<AudioDataManagerSO>();
             if (instance == null)

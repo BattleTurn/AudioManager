@@ -10,7 +10,7 @@ namespace BattleTurn.AudioManager.Editor
     {
         internal override string ClassTypeName => nameof(StringDropdownAttribute);
 
-        protected override List<string> GetOptions()
+        protected override List<string> GetOptions(SerializedProperty property)
         {
             var dropdownAttribute = attribute as StringDropdownAttribute;
             if (dropdownAttribute == null || dropdownAttribute.ConstantType == null)

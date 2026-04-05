@@ -12,7 +12,7 @@ namespace BattleTurn.AudioManager.Editor
     {
         internal delegate string OnEmptyName();
 
-        internal static string GenerateStaticClass(IReadOnlyList<string> values, string generatedClassName, OnEmptyName onEmptyName, string @namespace = Util.GENERATED_RUNTIME_NAMESPACE)
+        internal static string GenerateStaticClass(IReadOnlyList<string> values, string generatedClassName, OnEmptyName onEmptyName, string @namespace = CodeGenerationUtils.GENERATED_RUNTIME_NAMESPACE)
         {
             var className = MakeTypeIdentifier(generatedClassName, "GeneratedConstants");
             var sb = new StringBuilder(1024);
@@ -27,7 +27,7 @@ namespace BattleTurn.AudioManager.Editor
             return sb.ToString();
         }
 
-        internal static string GenerateEnum(IReadOnlyList<string> members, string enumName, string @namespace = Util.GENERATED_RUNTIME_NAMESPACE, bool includeNoneMember = true)
+        internal static string GenerateEnum(IReadOnlyList<string> members, string enumName, string @namespace = CodeGenerationUtils.GENERATED_RUNTIME_NAMESPACE, bool includeNoneMember = true)
         {
             var sanitizedEnumName = MakeTypeIdentifier(enumName, "GeneratedEnum");
             var sb = new StringBuilder(512);
@@ -47,9 +47,12 @@ namespace BattleTurn.AudioManager.Editor
 
             if (members != null)
             {
+                var usedNames = new HashSet<string>(StringComparer.Ordinal);
                 foreach (var member in members)
                 {
                     var sanitizedMember = MakeTypeIdentifier(member, "ITEM");
+                    sanitizedMember = MakeUnique(sanitizedMember, usedNames);
+                    usedNames.Add(sanitizedMember);
                     sb.Append("        ").Append(sanitizedMember).Append(" = ").Append(value).AppendLine(",");
                     value++;
                 }
@@ -133,8 +136,8 @@ namespace BattleTurn.AudioManager.Editor
 
         private static void AppendGeneratedFileHeader(StringBuilder sb, bool includeNullable)
         {
-            sb.AppendLine(Util.AUTO_GENERATED_MARKER);
-            sb.AppendLine(Util.DO_NOT_MODIFY_MARKER);
+            sb.AppendLine(CodeGenerationUtils.AUTO_GENERATED_MARKER);
+            sb.AppendLine(CodeGenerationUtils.DO_NOT_MODIFY_MARKER);
             sb.AppendLine();
 
             if (includeNullable)
@@ -186,8 +189,8 @@ namespace BattleTurn.AudioManager.Editor
 
         private static bool IsCSharpKeyword(string s)
         {
-            return Util.CSharpKeywords.Contains(s)
-                   || Util.CSharpKeywords.Contains(s.ToLowerInvariant());
+            return CodeGenerationUtils.CSharpKeywords.Contains(s)
+                   || CodeGenerationUtils.CSharpKeywords.Contains(s.ToLowerInvariant());
         }
     }
 }

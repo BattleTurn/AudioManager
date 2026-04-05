@@ -12,11 +12,11 @@ namespace BattleTurn.AudioManager.Editor
     [CustomPropertyDrawer(typeof(AudioMixerExposedParameterNameAttribute))]
     internal sealed class AudioMixerExposedParameterNameAttributeDrawer : StringDropdownDrawer
     {
-        private const string DEFAULT_GAME_MIXER_PATH = Util.GENERATED_FOLDER_PATH + "/GameMixer.mixer";
+        private const string DEFAULT_GAME_MIXER_PATH = CodeGenerationUtils.GENERATED_FOLDER_PATH + "/GameMixer.mixer";
 
         internal override string ClassTypeName => nameof(AudioMixerExposedParameterNameAttribute);
 
-        protected override List<string> GetOptions()
+        protected override List<string> GetOptions(SerializedProperty property)
         {
             var names = new HashSet<string>(StringComparer.Ordinal);
 

@@ -10,11 +10,10 @@ namespace BattleTurn.AudioManager.Editor
     public static class AudioMixerGenerator
     {
         private const string TEMPLATE_MIXER_UNITY_PATH = "Packages/AudioManager/Editor/Template/AudioMixer.mixer";
-        private const string GENERATED_FOLDER_UNITY_PATH = "Assets/Plugins/BattleTurn/Generated/AudioDataManager";
-        private const string GAME_MIXER_UNITY_PATH = GENERATED_FOLDER_UNITY_PATH + "/GameMixer.mixer";
-        private const string MIXER_CREATED_ONCE_KEY_PREFIX = "BattleTurn.AudioManager.GameMixerCreatedOnce::";
+        private const string GAME_MIXER_UNITY_PATH = CodeGenerationUtils.GENERATED_FOLDER_PATH + "/GameMixer.mixer";
+        private const string MIXER_CREATED_ONCE_KEY_PREFIX = nameof(BattleTurn) + "." + nameof(AudioManager) + ".GameMixerCreatedOnce::";
 
-        private const string OUTPUT_PATH = GENERATED_FOLDER_UNITY_PATH + "/GameMixer.mixer";
+        private const string OUTPUT_PATH = CodeGenerationUtils.GENERATED_FOLDER_PATH + "/GameMixer.mixer";
 
         public static void EnsureGameMixerCreatedOnce()
         {
@@ -96,7 +95,7 @@ namespace BattleTurn.AudioManager.Editor
             if (!forceOverwriteExisting && EditorPrefs.GetBool(key, defaultValue: false))
                 return false;
 
-            Util.EnsureFolderExists(GENERATED_FOLDER_UNITY_PATH);
+            CodeGenerationUtils.EnsureFolderExists(CodeGenerationUtils.GENERATED_FOLDER_PATH);
 
             var templatePath = FindTemplateMixerPath();
             if (string.IsNullOrEmpty(templatePath))

@@ -99,12 +99,13 @@ namespace BattleTurn.AudioManager.Editor
                 return false;
 
             bool didConstants = AudioDataManagerConstGenerator.Build(audioManager);
+            bool didAudioType = AudioTypeGenerator.Build(audioManager);
 
             EditorUtility.SetDirty(audioManager);
             AssetDatabase.SaveAssetIfDirty(audioManager);
             AssetDatabase.SaveAssets();
 
-            return didConstants;
+            return didConstants || didAudioType;
         }
 
         private static bool IsInspectorWindow(EditorWindow window)

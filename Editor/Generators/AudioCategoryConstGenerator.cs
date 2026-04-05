@@ -1,4 +1,3 @@
-using System;
 using System.Linq;
 using System.Collections.Generic;
 using BattleTurn.AudioManager.Runtime;
@@ -8,17 +7,15 @@ namespace BattleTurn.AudioManager.Editor
 {
     internal static class AudioCategoryConstGenerator
     {
-        private const string GENERATED_FOLDER_PATH = Util.GENERATED_FOLDER_PATH + "/Categories";
-
         public static bool Build(AudioCategorySO category)
         {
             if (category == null)
                 return false;
 
-            Util.EnsureFolderExists(GENERATED_FOLDER_PATH);
+            CodeGenerationUtils.EnsureFolderExists(CodeGenerationUtils.GENERATED_SCRIPT_PATH);
 
             var className = GetClassName(category);
-            var filePath = $"{GENERATED_FOLDER_PATH}/{className}.cs";
+            var filePath = CodeGenerationUtils.GENERATED_SCRIPT_PATH + "/" + className + ".cs";
             var source = GenerateSource(category);
             return GenerateFileUtil.GenerateFile(source, filePath);
         }

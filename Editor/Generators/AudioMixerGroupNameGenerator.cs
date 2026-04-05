@@ -9,14 +9,11 @@ namespace BattleTurn.AudioManager.Editor
 {
     internal static class AudioMixerGroupNameGenerator
     {
-        private const string GAME_MIXER_PATH = Util.GENERATED_FOLDER_PATH + "/GameMixer.mixer";
-        private const string GENERATED_CLASS_NAME = "AudioMixerGroupName";
-        private const string GENERATED_FILE_PATH = Util.GENERATED_FOLDER_PATH + "/" + GENERATED_CLASS_NAME + ".cs";
-
+        private const string GAME_MIXER_PATH = CodeGenerationUtils.GENERATED_FOLDER_PATH + "/GameMixer.mixer";
 
         public static bool EnsureGeneratedIfMissing()
         {
-            var absolutePath = GetAbsolutePathFromUnityPath(GENERATED_FILE_PATH);
+            var absolutePath = GetAbsolutePathFromUnityPath(GetScriptPath());
             if (File.Exists(absolutePath))
                 return false;
 
@@ -49,7 +46,7 @@ namespace BattleTurn.AudioManager.Editor
             if (mixer == null)
                 return false;
 
-            Util.EnsureFolderExists(Util.GENERATED_FOLDER_PATH);
+            CodeGenerationUtils.EnsureFolderExists(CodeGenerationUtils.GENERATED_FOLDER_PATH);
 
             var names = (mixer.FindMatchingGroups(string.Empty) ?? Array.Empty<AudioMixerGroup>())
                 .Where(g => g != null)
@@ -59,8 +56,8 @@ namespace BattleTurn.AudioManager.Editor
                 .OrderBy(n => n, StringComparer.Ordinal)
                 .ToList();
 
-            var source = GenerateFileUtil.GenerateStaticClass(names, GENERATED_CLASS_NAME, () => "GROUP");
-            return GenerateFileUtil.GenerateFile(source, GENERATED_FILE_PATH);
+            var source = GenerateFileUtil.GenerateStaticClass(names, GetClassName(), () => "GROUP");
+            return GenerateFileUtil.GenerateFile(source, GetScriptPath());
         }
 
         private static string GetAbsolutePathFromUnityPath(string unityPath)
@@ -72,6 +69,18 @@ namespace BattleTurn.AudioManager.Editor
             }
 
             throw new ArgumentException($"Expected Assets-relative path but got '{unityPath}'", nameof(unityPath));
+        }
+
+        private static string GetScriptPath()
+        {
+            return CodeGenerationUtils.GENERATED_SCRIPT_PATH + "/" + GetClassName() + ".cs";
+        }
+
+        private static string GetClassName()
+        {
+            if (nameof(AudioMixerGroupNameGenerator).EndsWith("Generator", StringComparison.Ordinal))
+                return nameof(AudioMixerGroupNameGenerator).Substring(0, nameof(AudioMixerGroupNameGenerator).Length - "Generator".Length);
+            return nameof(AudioMixerGroupNameGenerator).Replace("Generator", string.Empty);
         }
     }
 }

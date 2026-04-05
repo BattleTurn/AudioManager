@@ -17,9 +17,9 @@ namespace BattleTurn.AudioManager.Editor
             if (property.propertyType != SerializedPropertyType.String)
                 return EditorGUIUtility.singleLineHeight * 2f;
 
-            List<string> options = GetOptions();
+            List<string> options = GetOptions(property);
             if (options.Count == 0)
-                return EditorGUIUtility.singleLineHeight * 2f + 2f;
+                return EditorGUIUtility.singleLineHeight * 3f + 2f;
 
             return EditorGUIUtility.singleLineHeight;
         }
@@ -32,7 +32,7 @@ namespace BattleTurn.AudioManager.Editor
                 return;
             }
 
-            List<string> options = GetOptions();
+            List<string> options = GetOptions(property);
 
             var showHelp = options.Count == 0;
             if (showHelp)
@@ -69,17 +69,17 @@ namespace BattleTurn.AudioManager.Editor
 
             if (showHelp)
             {
-                var helpRect = position;
+                Rect helpRect = position;
                 helpRect.y += EditorGUIUtility.singleLineHeight + 2f;
-                helpRect.height = EditorGUIUtility.singleLineHeight;
+                helpRect.height = EditorGUIUtility.singleLineHeight * 2f;
                 EditorGUI.HelpBox(helpRect,
-                    $"⚠ No options found. Ensure the source provides options or assign a valid source for {ClassTypeName}.",
-                    MessageType.Info);
+                    $"No options found. Ensure the source provides options or assign a valid source for {ClassTypeName}.",
+                    MessageType.Error);
             }
 
             EditorGUI.EndProperty();
         }
 
-        protected abstract List<string> GetOptions();
+        protected abstract List<string> GetOptions(SerializedProperty property);
     }
 }
