@@ -1,19 +1,19 @@
 # Audio Manager
 
-README này mô tả cách setup và sử dụng package `BattleTurn Audio Manager` trong project Unity.
+🎵 This README explains how to set up and use the `BattleTurn Audio Manager` package in a Unity project.
 
-## 1. Package này dùng để làm gì
+## ✨ What This Package Does
 
-Package quản lý audio theo cấu trúc:
+This package organizes audio with the following structure:
 
-- `AudioDataManagerSO`: asset gốc, chứa toàn bộ album audio.
-- `AudioAlbumSO`: một album lớn, ví dụ `SFX`, `MFX`.
-- `AudioCategorySO`: nhóm audio con bên trong album, ví dụ `UI`, `Weapon`, `BGM`.
-- `AudioContentSO`: từng clip audio riêng lẻ.
-- `SoundManager` và `MusicManager`: runtime manager để phát SFX và Music.
-- `AudioPlayer`: component có dropdown để chọn audio ngay trong Inspector.
+- `AudioDataManagerSO`: the root asset that contains all audio albums.
+- `AudioAlbumSO`: a top-level album such as `SFX` or `MFX`.
+- `AudioCategorySO`: a category inside an album, such as `UI`, `Weapon`, or `BGM`.
+- `AudioContentSO`: a single audio clip entry.
+- `SoundManager` and `MusicManager`: runtime managers for SFX and music playback.
+- `AudioPlayer`: a component with Inspector dropdowns for choosing audio directly in the scene.
 
-Package cũng tự generate:
+The package also generates these files automatically:
 
 - `GameMixer.mixer`
 - `AudioType.cs`
@@ -21,122 +21,122 @@ Package cũng tự generate:
 - `AudioMixerExposedParameter.cs`
 - `AudioMixerGroupName.cs`
 
-Các file generated nằm trong thư mục:
+Generated files are stored in:
 
 ```text
 Assets/Plugins/BattleTurn/Generated/AudioManager
 ```
 
-## 2. Cài đặt ban đầu
+## 🚀 Initial Setup
 
-Sau khi thêm package vào project:
+After adding the package to your project:
 
-1. Mở Unity và đợi compile xong.
-2. Nếu hiện popup `AudioManager Extra`, import file `.unitypackage` được yêu cầu.
-3. Nếu popup không hiện nhưng bạn vẫn cần import lại, dùng menu:
+1. Open Unity and wait for compilation to finish.
+2. If the `AudioManager Extra` popup appears, import the requested `.unitypackage`.
+3. If the popup does not appear but you still need to import it manually, use:
 
 ```text
 Audio/Import Extra Package
 ```
 
-Lần đầu mở project, package sẽ cố gắng tự tạo `GameMixer` và auto-wire mixer vào `AudioDataManagerSO` nếu asset đã tồn tại.
+On first load, the package will try to create `GameMixer` automatically and auto-wire the mixer into any existing `AudioDataManagerSO` assets.
 
-## 3. Quy trình setup chuẩn
+## 🛠 Recommended Setup Flow
 
-Nên làm theo đúng thứ tự sau.
+Follow this order to avoid missing references or stale generated code.
 
-### Bước 1: Tạo AudioContent
+### 1. Create AudioContent assets
 
-Tạo asset tại menu:
+Create assets from:
 
 ```text
 BattleTurn/Audio/AudioContent
 ```
 
-Mỗi `AudioContentSO` gồm:
+Each `AudioContentSO` contains:
 
-- `_name`: tên key dùng để gọi audio trong code.
-- `_clip`: `AudioClip` thực tế.
+- `_name`: the key used to play the audio in code.
+- `_clip`: the actual `AudioClip`.
 
-Khuyến nghị:
+Recommended naming rules:
 
-- Tên không có khoảng trắng.
-- Tên phải unique trong cùng category.
-- Dùng tên ổn định vì code generated phụ thuộc vào tên này.
+- No spaces.
+- Unique within the same category.
+- Use stable names, because generated code depends on them.
 
-### Bước 2: Tạo Category
+### 2. Create Category assets
 
-Tạo asset tại menu:
+Create assets from:
 
 ```text
 BattleTurn/Audio/AudioCategorySO
 ```
 
-Trong category:
+Inside each category:
 
-- Đặt `_name` cho category.
-- Gán danh sách `_audioContents`.
+- Set `_name`.
+- Assign `_audioContents`.
 
-Ví dụ category:
+Example categories:
 
 - `UI`
 - `Footstep`
 - `Weapon`
 - `BGM`
 
-### Bước 3: Tạo Album
+### 3. Create Album assets
 
-Tạo asset tại menu:
+Create assets from:
 
 ```text
 BattleTurn/Audio/AudioAlbumSO
 ```
 
-Thông thường bạn sẽ tạo tối thiểu 2 album:
+In most projects you should create at least two albums:
 
 - `SFX`
 - `MFX`
 
-Trong mỗi album:
+Inside each album:
 
-- Đặt `_name` đúng tên album.
-- Gán `_audioCategories`.
+- Set `_name` to the album name.
+- Assign `_audioCategories`.
 
-Lưu ý quan trọng:
+⚠ Important:
 
-- `SoundManager` đọc album có tên `SFX`.
-- `MusicManager` đọc album có tên `MFX`.
+- `SoundManager` reads the album named `SFX`.
+- `MusicManager` reads the album named `MFX`.
 
-Nếu bạn đổi tên 2 album này sang tên khác, 2 manager mặc định sẽ không map đúng dữ liệu.
+If you rename these albums to something else, the default managers will no longer resolve the data correctly.
 
-### Bước 4: Tạo AudioDataManagerSO
+### 4. Create AudioDataManagerSO
 
-Tạo asset tại menu:
+Create the asset from:
 
 ```text
 BattleTurn/Audio/AudioDataManagerSO
 ```
 
-Trong asset này:
+Inside this asset:
 
-- Gán `_audioDatas` = danh sách album, thường là `SFX` và `MFX`.
+- Assign `_audioDatas`, usually `SFX` and `MFX`.
 
-### Bước 5: Tạo hoặc cập nhật mixer
+### 5. Create or update the mixer
 
-Dùng menu:
+Use:
 
 ```text
 Tools/Audio/Create Game Mixer
 ```
 
-Menu này sẽ:
+This menu will:
 
-- tạo `GameMixer.mixer`
-- auto-wire mixer vào các `AudioDataManagerSO`
+- create `GameMixer.mixer`
+- auto-wire the mixer into `AudioDataManagerSO` assets
 - generate `AudioMixerExposedParameter.cs`
 - generate `AudioMixerGroupName.cs`
 
-Khi đã có mixer rồi, nếu chỉ muốn cập nhật generated file thì dùng:
+If the mixer already exists and you only want to refresh generated files, use:
 
 ```text
 Tools/Audio/Update Mixer Exposed Parameter
@@ -144,99 +144,99 @@ Tools/Audio/Update Mixer Group Names
 Tools/Audio/Auto Wire AudioDataManager AudioMixer
 ```
 
-### Bước 6: Build generated code cho AudioData
+### 6. Build generated audio code
 
-Chọn asset `AudioDataManagerSO` trong Inspector, sau đó bấm nút:
+Select `AudioDataManagerSO` in the Inspector and click:
 
 ```text
 Build AudioData
 ```
 
-Thao tác này sẽ generate lại:
+This rebuilds:
 
 - `AudioType.cs`
 - `AudioNames.cs`
 
-Bạn cần bấm lại `Build AudioData` mỗi khi:
+Rebuild whenever you:
 
-- thêm album mới
-- đổi tên album
-- thêm category
-- đổi tên category
-- thêm audio content
-- đổi tên audio content
+- add a new album
+- rename an album
+- add a category
+- rename a category
+- add audio content
+- rename audio content
 
-## 4. Setup trong Scene
+## 🎬 Scene Setup
 
-Project hiện tại đang dùng 2 manager runtime:
+This project currently uses two runtime managers:
 
 - `SoundManager`
 - `MusicManager`
 
-Bạn nên đặt sẵn 2 object này trong bootstrap scene hoặc scene đầu tiên, rồi assign cùng một `AudioDataManagerSO` vào field `audioManager`.
+You should place both of them in your bootstrap scene or first game scene, then assign the same `AudioDataManagerSO` asset to their `audioManager` field.
 
-Lý do:
+Why this matters:
 
-- Nếu không có manager trong scene, singleton sẽ tự tạo `GameObject` mới.
-- Nhưng object được tạo runtime đó không tự có reference tới `AudioDataManagerSO`.
-- Khi đó audio có thể không phát đúng hoặc bị lỗi null/reference thiếu data.
+- If no manager exists in the scene, the singleton creates a new `GameObject` automatically.
+- That runtime-created object does not automatically receive an `AudioDataManagerSO` reference.
+- The result can be silent playback or null/missing-data issues.
 
-Khuyến nghị:
+Recommended setup:
 
-1. Tạo một GameObject `SoundManager` và add component `SoundManager`.
-2. Tạo một GameObject `MusicManager` và add component `MusicManager`.
-3. Gán cùng asset `AudioDataManagerSO` cho cả hai.
-4. Để các object này ở scene đầu tiên của game.
+1. Create a `SoundManager` GameObject and add the `SoundManager` component.
+2. Create a `MusicManager` GameObject and add the `MusicManager` component.
+3. Assign the same `AudioDataManagerSO` asset to both.
+4. Keep them in the first scene of the game.
 
-Hai manager này đã gọi `DontDestroyOnLoad`, nên chỉ cần tạo một lần.
+These managers already call `DontDestroyOnLoad`, so they only need to be created once.
 
-## 5. Phát audio bằng code
+## 💻 Playing Audio in Code
 
-Namespace chính:
+Main namespaces:
 
 ```csharp
 using BattleTurn.AudioManager.Runtime;
 using BattleTurn.AudioManager.Runtime.Implemented;
 ```
 
-### Phát SFX cơ bản
+### Play basic SFX
 
 ```csharp
 SoundManager.Instance.Play("Click");
 ```
 
-### Phát Music cơ bản
+### Play basic music
 
 ```csharp
 MusicManager.Instance.Play("MainTheme");
 ```
 
-### Phát theo category + audio name
+### Play by category + audio name
 
 ```csharp
 SoundManager.Instance.Play("UI", "Click", null);
 MusicManager.Instance.Play("BGM", "MainTheme", null);
 ```
 
-### Phát one-shot
+### Play one-shot audio
 
 ```csharp
 SoundManager.Instance.PlayOneShot("Explosion");
 ```
 
-### Phát tại vị trí world
+### Play at a world position
 
 ```csharp
 SoundManager.Instance.PlayAt("Explosion", hitPoint);
 ```
 
-### Phát bám theo transform
+### Play while following a transform
 
 ```csharp
 SoundManager.Instance.PlayFollow("EngineLoop", targetTransform);
 ```
 
-### Dùng tên generated thay vì hard-code string
+### Use generated names instead of hard-coded strings
 
 ```csharp
 SoundManager.Instance.Play(
@@ -245,13 +245,13 @@ SoundManager.Instance.Play(
     null);
 ```
 
-Nếu tên generated chưa đúng hoặc chưa xuất hiện, hãy chọn `AudioDataManagerSO` và bấm lại `Build AudioData`.
+If the generated names are missing or outdated, select `AudioDataManagerSO` and click `Build AudioData` again.
 
-## 6. Playback parameter
+## 🔁 Playback Parameters
 
-Manager hỗ trợ truyền thêm các parameter phát audio qua `IParameterizable`.
+The managers support playback parameters through `IParameterizable`.
 
-Ví dụ:
+Example:
 
 ```csharp
 var parameters = new IParameterizable[]
@@ -263,28 +263,28 @@ var parameters = new IParameterizable[]
 SoundManager.Instance.Play("UI", "Click", parameters);
 ```
 
-Các parameter hiện có:
+Available parameters:
 
-- `OneShotParameter`: phát bằng `PlayOneShot`.
-- `WorldPositionParameter`: đặt vị trí thế giới cho `AudioSource`.
-- `FollowParameter`: gắn `AudioSource` theo `Transform`.
-- `DelayParameter`: delay trước khi phát.
-- `LoopParameter`: lặp số lần hoặc vô hạn.
+- `OneShotParameter`: plays audio using one-shot behavior.
+- `WorldPositionParameter`: places the `AudioSource` in world space.
+- `FollowParameter`: attaches the `AudioSource` to a `Transform`.
+- `DelayParameter`: delays playback.
+- `LoopParameter`: loops a fixed number of times or forever.
 
-Ghi chú `LoopParameter`:
+`LoopParameter` notes:
 
-- `0`: phát 1 lần.
-- `1`: phát tổng cộng 2 lần.
-- `-1`: loop vô hạn.
+- `0`: play once.
+- `1`: play twice in total.
+- `-1`: infinite loop.
 
-Ghi chú `DelayParameter`:
+`DelayParameter` notes:
 
-- `DelayType.OnStart`: delay ở lần phát đầu.
-- `DelayType.EveryLoop`: delay ở mọi vòng lặp.
+- `DelayType.OnStart`: delay only on the first playback.
+- `DelayType.EveryLoop`: delay on every loop.
 
-## 7. Điều chỉnh mixer khi phát
+## 🎚 Mixer Parameters During Playback
 
-Bạn có thể truyền `AudioMixParameter` để chỉnh exposed parameter trên mixer:
+You can pass `AudioMixParameter` values to update exposed mixer parameters while playing:
 
 ```csharp
 SoundManager.Instance.Play(
@@ -292,7 +292,7 @@ SoundManager.Instance.Play(
     new AudioMixParameter(AudioMixerExposedParameter.SFX_LOWPASS_CUTOFF_FREQUENCY, 1200f));
 ```
 
-Ví dụ khác:
+Another example:
 
 ```csharp
 MusicManager.Instance.Play(
@@ -300,21 +300,21 @@ MusicManager.Instance.Play(
     new AudioMixParameter(AudioMixerExposedParameter.MUSIC_VOLUME, -10f));
 ```
 
-Tên parameter nên lấy từ file generated `AudioMixerExposedParameter` thay vì tự gõ tay.
+✅ Use names from the generated `AudioMixerExposedParameter` class instead of typing them manually.
 
-## 8. Dùng AudioPlayer trong Inspector
+## 🎮 Using AudioPlayer in the Inspector
 
-Component `AudioPlayer` cho phép chọn audio trực tiếp trong Inspector.
+The `AudioPlayer` component lets you select and play audio directly from the Inspector.
 
-Các field chính:
+Main fields:
 
-- `audioType`: chọn `SFX` hoặc `MFX`.
-- `categoryName`: dropdown category theo `audioType`.
-- `sfxName` hoặc `mfxName`: dropdown audio name theo category.
-- `mixerGroups`: danh sách `AudioMixParameter` áp vào lúc phát.
-- `fadeOnChange`: stop audio cũ bằng fade ngắn.
+- `audioType`: choose `SFX` or `MFX`.
+- `categoryName`: category dropdown filtered by `audioType`.
+- `sfxName` or `mfxName`: audio name dropdown filtered by category.
+- `mixerGroups`: a list of `AudioMixParameter` values applied on play.
+- `fadeOnChange`: stops the previous audio with a short fade.
 
-API sẵn có trên component này:
+Available methods on the component:
 
 - `Play()`
 - `PlayOneShot()`
@@ -323,86 +323,86 @@ API sẵn có trên component này:
 - `Pause()`
 - `Stop()`
 
-Đây là lựa chọn phù hợp cho:
+Good use cases:
 
-- button UI
-- trigger đơn giản
-- object trong scene muốn tự phát audio
+- UI buttons
+- simple triggers
+- scene objects that need self-contained audio playback
 
-## 9. Volume và stop
+## 🔊 Volume and Stop Control
 
-Mỗi manager có property `Volume` riêng:
+Each manager has its own `Volume` property:
 
 ```csharp
 SoundManager.Instance.Volume = 0.8f;
 MusicManager.Instance.Volume = 0.5f;
 ```
 
-Giá trị này được lưu bằng `PlayerPrefs` theo key manager.
+The value is stored in `PlayerPrefs` using the manager key.
 
-Stop toàn bộ:
+Stop everything:
 
 ```csharp
 SoundManager.Instance.StopAll();
 MusicManager.Instance.StopAll();
 ```
 
-Stop toàn bộ có fade:
+Stop everything with fade:
 
 ```csharp
 MusicManager.Instance.StopAll(0.25f);
 ```
 
-Stop theo `AudioSource` trả về:
+Stop a specific `AudioSource` returned from playback:
 
 ```csharp
 var source = SoundManager.Instance.Play("Explosion");
 SoundManager.Instance.Stop(source, 0.15f);
 ```
 
-## 10. Quy trình làm việc khuyến nghị
+## 📦 Recommended Workflow
 
-Khi thêm audio mới, flow nên là:
+When adding new audio, the safest workflow is:
 
-1. Tạo `AudioContentSO`.
-2. Gán vào `AudioCategorySO`.
-3. Đảm bảo category đã nằm trong album đúng (`SFX` hoặc `MFX`).
-4. Đảm bảo album đã được add vào `AudioDataManagerSO`.
-5. Chọn `AudioDataManagerSO` và bấm `Build AudioData`.
-6. Nếu có thay đổi mixer/group, chạy lại menu `Tools/Audio` tương ứng.
+1. Create `AudioContentSO`.
+2. Assign it to an `AudioCategorySO`.
+3. Make sure the category belongs to the correct album, `SFX` or `MFX`.
+4. Make sure the album is assigned to `AudioDataManagerSO`.
+5. Select `AudioDataManagerSO` and click `Build AudioData`.
+6. If mixer groups or mixer parameters changed, run the relevant `Tools/Audio` menu again.
 
-## 11. Lỗi thường gặp
+## 🧩 Common Issues
 
-### Gọi `Play` nhưng không ra tiếng
+### `Play` is called but nothing is heard
 
-Kiểm tra lần lượt:
+Check these first:
 
-- `SoundManager` hoặc `MusicManager` có tồn tại trong scene không.
-- Field `audioManager` trên manager đã được assign chưa.
-- `AudioDataManagerSO` có chứa album đúng chưa.
-- Audio name gọi trong code có đúng không.
-- Album có đang gán `MixerGroup` hợp lệ không.
-- Volume mixer hoặc manager có đang bị kéo quá nhỏ không.
+- `SoundManager` or `MusicManager` exists in the scene.
+- The `audioManager` field on the manager is assigned.
+- `AudioDataManagerSO` contains the correct albums.
+- The audio name used in code is valid.
+- The album is assigned to a valid `MixerGroup`.
+- Mixer volume or manager volume is not too low.
 
-### Dropdown category/audio không hiện
+### Category or audio dropdowns are empty
 
-Thường là do chưa build lại dữ liệu hoặc `AudioDataManagerSO` đầu tiên chưa chứa dữ liệu hợp lệ.
+This is usually caused by stale generated data or an invalid `AudioDataManagerSO` setup.
 
-Hãy kiểm tra:
+Check:
 
-- asset `AudioDataManagerSO` đã có `SFX` và `MFX`
-- category và audio content đã được gán đủ
-- đã bấm `Build AudioData`
+- the `AudioDataManagerSO` asset contains both `SFX` and `MFX`
+- categories and audio contents are assigned correctly
+- `Build AudioData` has been run
 
-### Đổi tên asset nhưng code generated chưa cập nhật
+### Asset names changed but generated code did not update
 
-Chọn lại `AudioDataManagerSO` và bấm:
+Select `AudioDataManagerSO` and click:
 
 ```text
 Build AudioData
 ```
 
-## 12. Ví dụ tối thiểu
+## 🧪 Minimal Example
 
 ```csharp
 using UnityEngine;
@@ -422,20 +422,20 @@ public sealed class DemoPlayAudio : MonoBehaviour
 }
 ```
 
-## 13. Khuyến nghị đặt tên
+## 🏷 Naming Recommendations
 
-Để generated code dễ đọc, nên dùng convention đơn giản:
+To keep generated code readable, use a simple naming convention:
 
 - Album: `SFX`, `MFX`
 - Category: `UI`, `Weapon`, `BGM`, `Ambient`
 - Audio name: `Click`, `Explosion`, `MainTheme`, `RainLoop`
 
-Không nên dùng:
+Avoid:
 
-- tên có khoảng trắng
-- tên thay đổi liên tục
-- tên trùng nhau giữa nhiều audio trong cùng category
+- names with spaces
+- names that change frequently
+- duplicate audio names inside the same category
 
 ---
 
-Nếu cần, tôi có thể viết tiếp một bản README thứ hai theo kiểu ngắn gọn hơn cho người dùng cuối trong team, hoặc bổ sung luôn phần ví dụ setup hoàn chỉnh cho scene đầu tiên của game.
+If needed, a shorter quick-start README for the team or a full first-scene setup example can be added next.
