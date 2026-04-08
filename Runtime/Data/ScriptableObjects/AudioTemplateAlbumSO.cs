@@ -3,10 +3,10 @@ using UnityEngine;
 namespace BattleTurn.AudioManager.Runtime
 {
     [CreateAssetMenu(fileName = TYPE_NAME, menuName = CREATE_ASSET_PATH)]
-    public sealed class AudioDataTemplateSO : AudioDataBaseSO
+    public sealed class AudioTemplateAlbumSO : AudioAlbumBaseSO
     {
         private const string CREATE_ASSET_PATH = ScriptableConstants.ASSET_MENU_PATH + TYPE_NAME;
-        private const string TYPE_NAME = nameof(AudioDataTemplateSO);
+        private const string TYPE_NAME = nameof(AudioTemplateAlbumSO);
 
         [StringDropdown(typeof(AudioNameConstants))]
         [SerializeField] private string _name;

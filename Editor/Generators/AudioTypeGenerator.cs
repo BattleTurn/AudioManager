@@ -32,12 +32,12 @@ namespace BattleTurn.AudioManager.Editor
             return GenerateFileUtil.GenerateEnum(members, GetClassName(), includeNoneMember: false);
         }
 
-        private static IEnumerable<AudioDataBaseSO> EnumerateAudioDatas(AudioDataManagerSO audioDataManager)
+        private static IEnumerable<AudioAlbumBaseSO> EnumerateAudioDatas(AudioDataManagerSO audioDataManager)
         {
             if (audioDataManager?.AudioDatas == null)
                 yield break;
 
-            var seen = new HashSet<AudioDataBaseSO>();
+            var seen = new HashSet<AudioAlbumBaseSO>();
             foreach (var audioData in audioDataManager.AudioDatas)
             {
                 if (audioData == null || !seen.Add(audioData))

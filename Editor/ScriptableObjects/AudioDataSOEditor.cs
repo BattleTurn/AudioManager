@@ -6,7 +6,7 @@ using NaughtyAttributes.Editor;
 
 namespace BattleTurn.AudioManager.Editor
 {
-    [CustomEditor(typeof(AudioDataSO))]
+    [CustomEditor(typeof(AudioAlbumSO))]
     public class AudioDataSOEditor : NaughtyInspector
     {
         public override void OnInspectorGUI()
@@ -14,7 +14,7 @@ namespace BattleTurn.AudioManager.Editor
             serializedObject.Update();
             base.OnInspectorGUI();
 
-            var audioData = target as AudioDataBaseSO;
+            var audioData = target as AudioAlbumBaseSO;
             if (audioData == null)
                 return;
 
@@ -23,7 +23,7 @@ namespace BattleTurn.AudioManager.Editor
             serializedObject.ApplyModifiedProperties();
         }
 
-        internal static void DrawValidation(AudioDataBaseSO audioData)
+        internal static void DrawValidation(AudioAlbumBaseSO audioData)
         {
             bool isValid = true;
             var names = new HashSet<string>();

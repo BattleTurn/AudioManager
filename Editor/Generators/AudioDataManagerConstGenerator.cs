@@ -52,7 +52,7 @@ namespace BattleTurn.AudioManager.Editor
             return sb.ToString();
         }
 
-        private static void AppendAudioDataClass(StringBuilder sb, AudioDataBaseSO audioData, int indentLevel, HashSet<string> usedAudioDataClassNames)
+        private static void AppendAudioDataClass(StringBuilder sb, AudioAlbumBaseSO audioData, int indentLevel, HashSet<string> usedAudioDataClassNames)
         {
             string audioDataClassName = GenerateFileUtil.MakeTypeIdentifier(audioData?.Name, "AudioData");
             audioDataClassName = GenerateFileUtil.MakeUniqueName(audioDataClassName, usedAudioDataClassNames);
@@ -77,7 +77,7 @@ namespace BattleTurn.AudioManager.Editor
             GenerateFileUtil.AppendStaticClassEnd(sb, indentLevel);
         }
 
-        private static void AppendCategoryNamesClass(StringBuilder sb, AudioDataBaseSO audioData, int indentLevel)
+        private static void AppendCategoryNamesClass(StringBuilder sb, AudioAlbumBaseSO audioData, int indentLevel)
         {
             GenerateFileUtil.AppendStaticClassStart(sb, "Categories", indentLevel);
 
@@ -97,12 +97,12 @@ namespace BattleTurn.AudioManager.Editor
             GenerateFileUtil.AppendStaticClassEnd(sb, indentLevel);
         }
 
-        private static IEnumerable<AudioDataBaseSO> EnumerateAudioDatas(AudioDataManagerSO audioDataManager)
+        private static IEnumerable<AudioAlbumBaseSO> EnumerateAudioDatas(AudioDataManagerSO audioDataManager)
         {
             if (audioDataManager?.AudioDatas == null)
                 yield break;
 
-            var seen = new HashSet<AudioDataBaseSO>();
+            var seen = new HashSet<AudioAlbumBaseSO>();
             foreach (var audioData in audioDataManager.AudioDatas)
             {
                 if (audioData == null || !seen.Add(audioData))

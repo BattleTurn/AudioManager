@@ -86,7 +86,7 @@ namespace BattleTurn.AudioManager.Editor
             for (int i = 0; i < audioDatasProp.arraySize; i++)
             {
                 var audioDataRefProp = audioDatasProp.GetArrayElementAtIndex(i);
-                var audioDataSO = audioDataRefProp.objectReferenceValue as AudioDataSO;
+                var audioDataSO = audioDataRefProp.objectReferenceValue as AudioAlbumSO;
                 if (audioDataSO == null)
                     continue;
 
@@ -99,7 +99,7 @@ namespace BattleTurn.AudioManager.Editor
             return anyChanged;
         }
 
-        private static bool WireAudioDataMixerGroup(AudioDataSO audioDataSO, AudioMixerGroup sfxGroup, AudioMixerGroup mfxGroup)
+        private static bool WireAudioDataMixerGroup(AudioAlbumSO audioDataSO, AudioMixerGroup sfxGroup, AudioMixerGroup mfxGroup)
         {
             var audioDataSerializedObj = new SerializedObject(audioDataSO);
             var nameProp = audioDataSerializedObj.FindProperty("_name");

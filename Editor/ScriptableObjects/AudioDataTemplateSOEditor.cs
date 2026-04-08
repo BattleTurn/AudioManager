@@ -5,7 +5,7 @@ using UnityEditor;
 
 namespace BattleTurn.AudioManager.Editor
 {
-    [CustomEditor(typeof(AudioDataTemplateSO))]
+    [CustomEditor(typeof(AudioTemplateAlbumSO))]
     internal class AudioDataTemplateSOEditor : NaughtyInspector
     {
         public override void OnInspectorGUI()
@@ -13,7 +13,7 @@ namespace BattleTurn.AudioManager.Editor
             serializedObject.Update();
             base.OnInspectorGUI();
 
-            var audioData = target as AudioDataBaseSO;
+            var audioData = target as AudioAlbumBaseSO;
             if (audioData == null)
                 return;
 

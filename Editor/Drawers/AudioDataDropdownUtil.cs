@@ -63,7 +63,7 @@ namespace BattleTurn.AudioManager.Editor
             return results.OrderBy(name => name, StringComparer.Ordinal).ToList();
         }
 
-        private static AudioDataBaseSO ResolveAudioData(SerializedProperty property, string audioTypeFieldName)
+        private static AudioAlbumBaseSO ResolveAudioData(SerializedProperty property, string audioTypeFieldName)
         {
             string audioDataName = GetSiblingEnumName(property, audioTypeFieldName);
             if (string.IsNullOrWhiteSpace(audioDataName))

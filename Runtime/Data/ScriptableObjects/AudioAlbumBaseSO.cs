@@ -5,7 +5,7 @@ using UnityEngine.Audio;
 
 namespace BattleTurn.AudioManager.Runtime
 {
-    public abstract class AudioDataBaseSO : ScriptableObject
+    public abstract class AudioAlbumBaseSO : ScriptableObject
     {
         [Expandable]
         [SerializeField] protected AudioCategoryBaseSO[] _audioCategories;

@@ -20,7 +20,7 @@ namespace BattleTurn.AudioManager.Runtime
 
         public abstract string Key { get; }
 
-        protected abstract AudioDataBaseSO audioData { get; }
+        protected abstract AudioAlbumBaseSO audioData { get; }
 
         private readonly List<string> _parameterNamesCache = new();
         private readonly Dictionary<string, Channel> _channelMap = new();

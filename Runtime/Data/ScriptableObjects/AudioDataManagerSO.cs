@@ -13,7 +13,7 @@ namespace BattleTurn.AudioManager.Runtime
         private const string TYPE_NAME = nameof(AudioDataManagerSO);
 
         [Expandable]
-        [SerializeField] private AudioDataBaseSO[] _audioDatas;
+        [SerializeField] private AudioAlbumBaseSO[] _audioDatas;
 
         [Foldout(GroupConstants.DEBUG)]
         [ReadOnly]
@@ -25,16 +25,16 @@ namespace BattleTurn.AudioManager.Runtime
         [SerializeField]
         private AudioMixerGroup _masterGroup;
 
-        private readonly Dictionary<string, AudioDataBaseSO> _audioDataDict = new();
+        private readonly Dictionary<string, AudioAlbumBaseSO> _audioDataDict = new();
 
         #region PROPERTIES
-        public AudioDataBaseSO SFXData => TryGetAudioData(AudioNameConstants.SFX, out var sfxData) ? sfxData : null;
-        public AudioDataBaseSO MFXData => TryGetAudioData(AudioNameConstants.MFX, out var musicData) ? musicData : null;
-        public IReadOnlyList<AudioDataBaseSO> AudioDatas => _audioDatas;
+        public AudioAlbumBaseSO SFXData => TryGetAudioData(AudioNameConstants.SFX, out var sfxData) ? sfxData : null;
+        public AudioAlbumBaseSO MFXData => TryGetAudioData(AudioNameConstants.MFX, out var musicData) ? musicData : null;
+        public IReadOnlyList<AudioAlbumBaseSO> AudioDatas => _audioDatas;
         public AudioMixer AudioMixer => _audioMixer;
         public AudioMixerGroup MasterGroup => _masterGroup;
 
-        public AudioDataBaseSO this[string audioDataName]
+        public AudioAlbumBaseSO this[string audioDataName]
         {
             get
             {
@@ -52,7 +52,7 @@ namespace BattleTurn.AudioManager.Runtime
             EnsureInitialized();
         }
 
-        private bool TryGetAudioData(string audioDataName, out AudioDataBaseSO audioData)
+        private bool TryGetAudioData(string audioDataName, out AudioAlbumBaseSO audioData)
         {
             EnsureInitialized();
 
