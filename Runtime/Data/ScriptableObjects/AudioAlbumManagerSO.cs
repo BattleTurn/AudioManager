@@ -41,7 +41,7 @@ namespace BattleTurn.AudioManager.Runtime
                 if (TryGetAudioData(audioDataName, out var audioData))
                     return audioData;
 
-                Debug.LogWarning($"AudioDataManager: AudioData name '{audioDataName}' not found");
+                Debug.LogWarning($"AudioAlbumManager: Album name '{audioDataName}' not found");
                 return null;
             }
         }
@@ -58,17 +58,17 @@ namespace BattleTurn.AudioManager.Runtime
 
             if (string.IsNullOrEmpty(audioDataName))
             {
-                throw new ArgumentException("❌ AudioData name cannot be null or empty", nameof(audioDataName));
+                throw new ArgumentException("❌ Audio album name cannot be null or empty", nameof(audioDataName));
             }
 
             if (_audioDataDict.TryGetValue(audioDataName, out audioData))
             {
                 if (audioData == null)
-                    throw new NullReferenceException($"❌ AudioData '{audioDataName}' not is null");
+                    throw new NullReferenceException($"❌ Audio album '{audioDataName}' is null");
                 return true;
             }
 
-            throw new ArgumentOutOfRangeException(nameof(audioDataName), $"❌ AudioData '{audioDataName}' not in {_audioAlbums}");
+            throw new ArgumentOutOfRangeException(nameof(audioDataName), $"❌ Audio album '{audioDataName}' was not found in {_audioAlbums}");
         }
 
         private void EnsureInitialized()
@@ -83,16 +83,16 @@ namespace BattleTurn.AudioManager.Runtime
                     continue;
 
                 var name = audioData.Name;
-                Debug.Log($"AudioDataManager: Registering AudioData '{name}' from asset {audioData}");
+                Debug.Log($"AudioAlbumManager: Registering album '{name}' from asset {audioData}");
                 if (string.IsNullOrEmpty(name))
                 {
-                    Debug.LogWarning($"AudioData asset with empty name found: {audioData}");
+                    Debug.LogWarning($"Audio album asset with empty name found: {audioData}");
                     continue;
                 }
 
                 if (_audioDataDict.ContainsKey(name))
                 {
-                    Debug.LogWarning($"Duplicate AudioData name detected: {name} in asset {audioData}");
+                    Debug.LogWarning($"Duplicate audio album name detected: {name} in asset {audioData}");
                     continue;
                 }
 

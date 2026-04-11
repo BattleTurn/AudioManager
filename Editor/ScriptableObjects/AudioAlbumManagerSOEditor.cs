@@ -37,7 +37,7 @@ namespace BattleTurn.AudioManager.Editor
                 if (GUILayout.Button($"Build {nameof(Runtime.AudioAlbumManagerSO)}", GUILayout.Width(180)))
                 {
                     var audioManager = (Runtime.AudioAlbumManagerSO)target;
-                    bool didBuild = ApplyAudioDataChanges(audioManager);
+                    bool didBuild = ApplyAudioAlbumChanges(audioManager);
                     Debug.Log(didBuild
                         ? $"Built {nameof(Runtime.AudioAlbumManagerSO)} generated code"
                         : $"{nameof(Runtime.AudioAlbumManagerSO)} generated code is already up to date");
@@ -78,7 +78,7 @@ namespace BattleTurn.AudioManager.Editor
 
                 if (choice == 0)
                 {
-                    ApplyAudioDataChanges((Runtime.AudioAlbumManagerSO)target);
+                    ApplyAudioAlbumChanges((Runtime.AudioAlbumManagerSO)target);
                 }
                 else if (choice == 1)
                 {
@@ -93,12 +93,12 @@ namespace BattleTurn.AudioManager.Editor
             }
         }
 
-        private static bool ApplyAudioDataChanges(Runtime.AudioAlbumManagerSO audioManager)
+        private static bool ApplyAudioAlbumChanges(Runtime.AudioAlbumManagerSO audioManager)
         {
             if (audioManager == null)
                 return false;
 
-            bool didConstants = AudioDataManagerConstGenerator.Build(audioManager);
+            bool didConstants = AudioAlbumManagerConstGenerator.Build(audioManager);
             bool didAudioType = AudioTypeGenerator.Build(audioManager);
 
             EditorUtility.SetDirty(audioManager);

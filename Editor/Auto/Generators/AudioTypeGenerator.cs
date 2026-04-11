@@ -6,22 +6,22 @@ namespace BattleTurn.AudioManager.Editor
 {
     internal static class AudioTypeGenerator
     {
-        public static bool Build(AudioAlbumManagerSO audioDataManager)
+        public static bool Build(AudioAlbumManagerSO audioAlbumManager)
         {
-            if (audioDataManager == null)
+            if (audioAlbumManager == null)
                 return false;
 
             CodeGenerationUtils.EnsureFolderExists(CodeGenerationUtils.GENERATED_SCRIPT_PATH);
 
-            var source = GenerateAudioTypeSource(audioDataManager);
+            var source = GenerateAudioTypeSource(audioAlbumManager);
             return GenerateFileUtil.GenerateFile(source, CodeGenerationUtils.GENERATED_SCRIPT_PATH + "/" + GetClassName() + ".cs");
         }
 
-        private static string GenerateAudioTypeSource(AudioAlbumManagerSO audioDataManager)
+        private static string GenerateAudioTypeSource(AudioAlbumManagerSO audioAlbumManager)
         {
             var members = new List<string>();
 
-            foreach (var audioData in EnumerateAudioDatas(audioDataManager))
+            foreach (var audioData in EnumerateAudioAlbums(audioAlbumManager))
             {
                 if (string.IsNullOrWhiteSpace(audioData?.Name))
                     continue;
@@ -32,13 +32,13 @@ namespace BattleTurn.AudioManager.Editor
             return GenerateFileUtil.GenerateEnum(members, GetClassName(), includeNoneMember: false);
         }
 
-        private static IEnumerable<AudioAlbumBaseSO> EnumerateAudioDatas(AudioAlbumManagerSO audioDataManager)
+        private static IEnumerable<AudioAlbumBaseSO> EnumerateAudioAlbums(AudioAlbumManagerSO audioAlbumManager)
         {
-            if (audioDataManager?.AudioAlbums == null)
+            if (audioAlbumManager?.AudioAlbums == null)
                 yield break;
 
             var seen = new HashSet<AudioAlbumBaseSO>();
-            foreach (var audioData in audioDataManager.AudioAlbums)
+            foreach (var audioData in audioAlbumManager.AudioAlbums)
             {
                 if (audioData == null || !seen.Add(audioData))
                     continue;

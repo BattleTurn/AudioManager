@@ -8,15 +8,15 @@ namespace BattleTurn.AudioManager.Editor
 {
     internal static class AlbumManagerAutoRef
     {
-        private const string AUDIO_DATA_MANAGER_PATH = CodeGenerationUtils.GENERATED_SCRIPTABLE_OBJECT_PATH
+        private const string AUDIO_ALBUM_MANAGER_PATH = CodeGenerationUtils.GENERATED_SCRIPTABLE_OBJECT_PATH
         + "/Managers";
         private const string AUDIO_ALBUM_PATH = CodeGenerationUtils.GENERATED_SCRIPTABLE_OBJECT_PATH
         + "/Albums";
-        private const string DEFAULT_AUDIO_DATA_MANAGER_ASSET_PATH = AUDIO_DATA_MANAGER_PATH + "/" + nameof(AudioAlbumManagerSO) + ".asset";
+        private const string DEFAULT_AUDIO_ALBUM_MANAGER_ASSET_PATH = AUDIO_ALBUM_MANAGER_PATH + "/" + nameof(AudioAlbumManagerSO) + ".asset";
         private const string DEFAULT_SFX_AUDIO_ALBUM_ASSET_PATH = AUDIO_ALBUM_PATH + "/SFXSO.asset";
         private const string DEFAULT_MFX_AUDIO_ALBUM_ASSET_PATH = AUDIO_ALBUM_PATH + "/MFXSO.asset";
 
-        internal static bool WireAllAudioDataManagerAssets(AudioMixer mixer)
+        internal static bool WireAllAudioAlbumManagerAssets(AudioMixer mixer)
         {
             if (mixer == null)
                 return false;
@@ -28,7 +28,7 @@ namespace BattleTurn.AudioManager.Editor
             var guids = AssetDatabase.FindAssets($"t:{nameof(AudioAlbumManagerSO)}");
             if (guids == null || guids.Length == 0)
             {
-                var created = EnsureDefaultAudioDataManagerAssetExists();
+                var created = EnsureDefaultAudioAlbumManagerAssetExists();
                 if (created == null)
                     return false;
 
@@ -46,7 +46,7 @@ namespace BattleTurn.AudioManager.Editor
                 if (asset == null)
                     continue;
 
-                if (WireAudioDataManager(asset, mixer, masterGroup, sfxGroup, mfxGroup))
+                if (WireAudioAlbumManager(asset, mixer, masterGroup, sfxGroup, mfxGroup))
                 {
                     anyChanged = true;
                 }
@@ -58,7 +58,7 @@ namespace BattleTurn.AudioManager.Editor
             return anyChanged;
         }
 
-        private static bool WireAudioDataManager(AudioAlbumManagerSO asset, AudioMixer mixer, AudioMixerGroup masterGroup, AudioMixerGroup sfxGroup, AudioMixerGroup mfxGroup)
+        private static bool WireAudioAlbumManager(AudioAlbumManagerSO asset, AudioMixer mixer, AudioMixerGroup masterGroup, AudioMixerGroup sfxGroup, AudioMixerGroup mfxGroup)
         {
             var so = new SerializedObject(asset);
             var changedThis = false;
@@ -313,25 +313,25 @@ namespace BattleTurn.AudioManager.Editor
             return null;
         }
 
-        private static AudioAlbumManagerSO EnsureDefaultAudioDataManagerAssetExists()
+        private static AudioAlbumManagerSO EnsureDefaultAudioAlbumManagerAssetExists()
         {
-            var existing = AssetDatabase.LoadAssetAtPath<AudioAlbumManagerSO>(DEFAULT_AUDIO_DATA_MANAGER_ASSET_PATH);
+            var existing = AssetDatabase.LoadAssetAtPath<AudioAlbumManagerSO>(DEFAULT_AUDIO_ALBUM_MANAGER_ASSET_PATH);
             if (existing != null)
                 return existing;
 
-            EnsureFolderExists(AUDIO_DATA_MANAGER_PATH);
+            EnsureFolderExists(AUDIO_ALBUM_MANAGER_PATH);
 
             var instance = ScriptableObject.CreateInstance<AudioAlbumManagerSO>();
             if (instance == null)
             {
-                Debug.LogWarning("AudioManagerMixerAutoRef: Failed to create AudioDataManager instance.");
+                Debug.LogWarning("AudioManagerMixerAutoRef: Failed to create AudioAlbumManager instance.");
                 return null;
             }
 
-            AssetDatabase.CreateAsset(instance, DEFAULT_AUDIO_DATA_MANAGER_ASSET_PATH);
+            AssetDatabase.CreateAsset(instance, DEFAULT_AUDIO_ALBUM_MANAGER_ASSET_PATH);
             AssetDatabase.SaveAssets();
-            AssetDatabase.ImportAsset(DEFAULT_AUDIO_DATA_MANAGER_ASSET_PATH, ImportAssetOptions.ForceUpdate);
-            return AssetDatabase.LoadAssetAtPath<AudioAlbumManagerSO>(DEFAULT_AUDIO_DATA_MANAGER_ASSET_PATH);
+            AssetDatabase.ImportAsset(DEFAULT_AUDIO_ALBUM_MANAGER_ASSET_PATH, ImportAssetOptions.ForceUpdate);
+            return AssetDatabase.LoadAssetAtPath<AudioAlbumManagerSO>(DEFAULT_AUDIO_ALBUM_MANAGER_ASSET_PATH);
         }
 
         private static void EnsureFolderExists(string unityFolderPath)

@@ -61,7 +61,7 @@ namespace BattleTurn.AudioManager.Editor
             if (isValid)
             {
                 EditorGUILayout.Space(8);
-                EditorGUILayout.HelpBox("AudioData constants are now generated from AudioDataManagerSO. Save or apply changes on the manager asset to regenerate code.", MessageType.Info);
+                EditorGUILayout.HelpBox("Audio album constants are now generated from AudioAlbumManagerSO. Save or apply changes on the manager asset to regenerate code.", MessageType.Info);
             }
         }
     }

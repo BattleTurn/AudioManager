@@ -4,13 +4,13 @@ using BattleTurn.AudioManager.Runtime;
 
 namespace BattleTurn.AudioManager.Editor
 {
-    internal static class AudioDataManagerConstGenerator
+    internal static class AudioAlbumManagerConstGenerator
     {
         private const string GENERATED_FOLDER_PATH = CodeGenerationUtils.GENERATED_FOLDER_PATH + "/Managers";
 
-        public static bool Build(AudioAlbumManagerSO audioDataManager)
+        public static bool Build(AudioAlbumManagerSO audioAlbumManager)
         {
-            if (audioDataManager == null)
+            if (audioAlbumManager == null)
                 return false;
 
             CodeGenerationUtils.EnsureFolderExists(CodeGenerationUtils.GENERATED_FOLDER_PATH);
@@ -18,13 +18,13 @@ namespace BattleTurn.AudioManager.Editor
 
             string className = GetRootClassName();
             string filePath = $"{GENERATED_FOLDER_PATH}/{className}.cs";
-            string source = GenerateSource(audioDataManager, className);
+            string source = GenerateSource(audioAlbumManager, className);
             bool didGenerateConstants = GenerateFileUtil.GenerateFile(source, filePath);
 
             return didGenerateConstants;
         }
 
-        internal static string GenerateSource(AudioAlbumManagerSO audioDataManager, string rootClassName = null)
+        internal static string GenerateSource(AudioAlbumManagerSO audioAlbumManager, string rootClassName = null)
         {
             rootClassName ??= GetRootClassName();
 
@@ -41,7 +41,7 @@ namespace BattleTurn.AudioManager.Editor
 
             var usedAudioDataClassNames = new HashSet<string>(System.StringComparer.Ordinal);
 
-            foreach (var audioData in EnumerateAudioDatas(audioDataManager))
+            foreach (var audioData in EnumerateAudioAlbums(audioAlbumManager))
             {
                 AppendAudioDataClass(sb, audioData, 2, usedAudioDataClassNames);
             }
@@ -97,13 +97,13 @@ namespace BattleTurn.AudioManager.Editor
             GenerateFileUtil.AppendStaticClassEnd(sb, indentLevel);
         }
 
-        private static IEnumerable<AudioAlbumBaseSO> EnumerateAudioDatas(AudioAlbumManagerSO audioDataManager)
+        private static IEnumerable<AudioAlbumBaseSO> EnumerateAudioAlbums(AudioAlbumManagerSO audioAlbumManager)
         {
-            if (audioDataManager?.AudioAlbums == null)
+            if (audioAlbumManager?.AudioAlbums == null)
                 yield break;
 
             var seen = new HashSet<AudioAlbumBaseSO>();
-            foreach (var audioData in audioDataManager.AudioAlbums)
+            foreach (var audioData in audioAlbumManager.AudioAlbums)
             {
                 if (audioData == null || !seen.Add(audioData))
                     continue;

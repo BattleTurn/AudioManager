@@ -51,7 +51,7 @@ namespace BattleTurn.AudioManager.Editor
 
             Debug.Log($"✅ Created AudioMixer at: {OUTPUT_PATH}");
 
-            AlbumManagerAutoRef.WireAllAudioDataManagerAssets(newMixer);
+            AlbumManagerAutoRef.WireAllAudioAlbumManagerAssets(newMixer);
 
             AudioMixerExposedParameterGenerator.BuildFromMixerPath(OUTPUT_PATH);
             AudioMixerGroupNameGenerator.BuildFromMixerPath(OUTPUT_PATH);
@@ -79,11 +79,11 @@ namespace BattleTurn.AudioManager.Editor
                 : "ℹ️ AudioMixerGroupName is already up to date or mixer missing");
         }
 
-        [MenuItem("Tools/Audio/Auto Wire AudioDataManager AudioMixer")]
-        public static void AutoWireAudioDataManagerMixer()
+        [MenuItem("Tools/Audio/Auto Wire AudioAlbumManager AudioMixer")]
+        public static void AutoWireAudioAlbumManagerMixer()
         {
             var mixer = AssetDatabase.LoadAssetAtPath<AudioMixer>(OUTPUT_PATH);
-            var did = AlbumManagerAutoRef.WireAllAudioDataManagerAssets(mixer);
+            var did = AlbumManagerAutoRef.WireAllAudioAlbumManagerAssets(mixer);
             Debug.Log(did
                 ? "✅ Wired AudioManager.audioMixer"
                 : "ℹ️ No AudioManager assets needed wiring (or GameMixer missing)");
@@ -147,7 +147,7 @@ namespace BattleTurn.AudioManager.Editor
                 return false;
             }
 
-            AlbumManagerAutoRef.WireAllAudioDataManagerAssets(newMixer);
+            AlbumManagerAutoRef.WireAllAudioAlbumManagerAssets(newMixer);
             return true;
         }
 

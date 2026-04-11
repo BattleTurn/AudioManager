@@ -6,7 +6,7 @@
 
 This package organizes audio with the following structure:
 
-- `AudioDataManagerSO`: the root asset that contains all audio albums.
+- `AudioAlbumManagerSO`: the root asset that contains all audio albums.
 - `AudioAlbumSO`: a top-level album such as `SFX` or `MFX`.
 - `AudioCategorySO`: a category inside an album, such as `UI`, `Weapon`, or `BGM`.
 - `AudioContentSO`: a single audio clip entry.
@@ -27,19 +27,39 @@ Generated files are stored in:
 Assets/Plugins/BattleTurn/Generated/AudioManager
 ```
 
+## 📦 Prerequisite
+
+Before installing `AudioManager`, you should install `dependency_downloader` first if you want package dependencies to be installed automatically.
+
+Install it from:
+
+```text
+https://github.com/BattleTurn/dependency_downloader.git
+```
+
+This lets `AudioManager` auto-install its package dependencies from `Dependency.json`.
+
+If you do not want to use `dependency_downloader`, install these dependencies manually before adding `AudioManager`:
+
+- `UniRx`
+- `NaughtyAttributes`
+- `UniTask`
+
 ## 🚀 Initial Setup
 
 After adding the package to your project:
 
-1. Open Unity and wait for compilation to finish.
-2. If the `AudioManager Extra` popup appears, import the requested `.unitypackage`.
-3. If the popup does not appear but you still need to import it manually, use:
+1. Make sure `dependency_downloader` is already installed, or manually install `UniRx`, `NaughtyAttributes`, and `UniTask` first.
+2. Add `AudioManager` to your project.
+3. Open Unity and wait for compilation to finish.
+4. If the `AudioManager Extra` popup appears, import the requested `.unitypackage`.
+5. If the popup does not appear but you still need to import it manually, use:
 
 ```text
 Audio/Import Extra Package
 ```
 
-On first load, the package will try to create `GameMixer` automatically and auto-wire the mixer into any existing `AudioDataManagerSO` assets.
+On first load, the package will try to create `GameMixer` automatically and auto-wire the mixer into any existing `AudioAlbumManagerSO` assets.
 
 ## 🛠 Recommended Setup Flow
 
@@ -109,17 +129,17 @@ Inside each album:
 
 If you rename these albums to something else, the default managers will no longer resolve the data correctly.
 
-### 4. Create AudioDataManagerSO
+### 4. Create AudioAlbumManagerSO
 
 Create the asset from:
 
 ```text
-BattleTurn/Audio/AudioDataManagerSO
+BattleTurn/Audio/AudioAlbumManagerSO
 ```
 
 Inside this asset:
 
-- Assign `_audioDatas`, usually `SFX` and `MFX`.
+- Assign `_audioAlbums`, usually `SFX` and `MFX`.
 
 ### 5. Create or update the mixer
 
@@ -132,7 +152,7 @@ Tools/Audio/Create Game Mixer
 This menu will:
 
 - create `GameMixer.mixer`
-- auto-wire the mixer into `AudioDataManagerSO` assets
+- auto-wire the mixer into `AudioAlbumManagerSO` assets
 - generate `AudioMixerExposedParameter.cs`
 - generate `AudioMixerGroupName.cs`
 
@@ -141,15 +161,15 @@ If the mixer already exists and you only want to refresh generated files, use:
 ```text
 Tools/Audio/Update Mixer Exposed Parameter
 Tools/Audio/Update Mixer Group Names
-Tools/Audio/Auto Wire AudioDataManager AudioMixer
+Tools/Audio/Auto Wire AudioAlbumManager AudioMixer
 ```
 
 ### 6. Build generated audio code
 
-Select `AudioDataManagerSO` in the Inspector and click:
+Select `AudioAlbumManagerSO` in the Inspector and click:
 
 ```text
-Build AudioData
+Build AudioAlbumManagerSO
 ```
 
 This rebuilds:
@@ -173,19 +193,19 @@ This project currently uses two runtime managers:
 - `SoundManager`
 - `MusicManager`
 
-You should place both of them in your bootstrap scene or first game scene, then assign the same `AudioDataManagerSO` asset to their `audioManager` field.
+You should place both of them in your bootstrap scene or first game scene, then assign the same `AudioAlbumManagerSO` asset to their `audioManager` field.
 
 Why this matters:
 
 - If no manager exists in the scene, the singleton creates a new `GameObject` automatically.
-- That runtime-created object does not automatically receive an `AudioDataManagerSO` reference.
+- That runtime-created object does not automatically receive an `AudioAlbumManagerSO` reference.
 - The result can be silent playback or null/missing-data issues.
 
 Recommended setup:
 
 1. Create a `SoundManager` GameObject and add the `SoundManager` component.
 2. Create a `MusicManager` GameObject and add the `MusicManager` component.
-3. Assign the same `AudioDataManagerSO` asset to both.
+3. Assign the same `AudioAlbumManagerSO` asset to both.
 4. Keep them in the first scene of the game.
 
 These managers already call `DontDestroyOnLoad`, so they only need to be created once.
@@ -245,7 +265,7 @@ SoundManager.Instance.Play(
     null);
 ```
 
-If the generated names are missing or outdated, select `AudioDataManagerSO` and click `Build AudioData` again.
+If the generated names are missing or outdated, select `AudioAlbumManagerSO` and click `Build AudioAlbumManagerSO` again.
 
 ## 🔁 Playback Parameters
 
@@ -367,8 +387,8 @@ When adding new audio, the safest workflow is:
 1. Create `AudioContentSO`.
 2. Assign it to an `AudioCategorySO`.
 3. Make sure the category belongs to the correct album, `SFX` or `MFX`.
-4. Make sure the album is assigned to `AudioDataManagerSO`.
-5. Select `AudioDataManagerSO` and click `Build AudioData`.
+4. Make sure the album is assigned to `AudioAlbumManagerSO`.
+5. Select `AudioAlbumManagerSO` and click `Build AudioAlbumManagerSO`.
 6. If mixer groups or mixer parameters changed, run the relevant `Tools/Audio` menu again.
 
 ## 🧩 Common Issues
@@ -379,27 +399,27 @@ Check these first:
 
 - `SoundManager` or `MusicManager` exists in the scene.
 - The `audioManager` field on the manager is assigned.
-- `AudioDataManagerSO` contains the correct albums.
+- `AudioAlbumManagerSO` contains the correct albums.
 - The audio name used in code is valid.
 - The album is assigned to a valid `MixerGroup`.
 - Mixer volume or manager volume is not too low.
 
 ### Category or audio dropdowns are empty
 
-This is usually caused by stale generated data or an invalid `AudioDataManagerSO` setup.
+This is usually caused by stale generated data or an invalid `AudioAlbumManagerSO` setup.
 
 Check:
 
-- the `AudioDataManagerSO` asset contains both `SFX` and `MFX`
+- the `AudioAlbumManagerSO` asset contains both `SFX` and `MFX`
 - categories and audio contents are assigned correctly
-- `Build AudioData` has been run
+- `Build AudioAlbumManagerSO` has been run
 
 ### Asset names changed but generated code did not update
 
-Select `AudioDataManagerSO` and click:
+Select `AudioAlbumManagerSO` and click:
 
 ```text
-Build AudioData
+Build AudioAlbumManagerSO
 ```
 
 ## 🧪 Minimal Example

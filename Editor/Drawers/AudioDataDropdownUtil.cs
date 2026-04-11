@@ -69,7 +69,7 @@ namespace BattleTurn.AudioManager.Editor
             if (string.IsNullOrWhiteSpace(audioDataName))
                 return null;
 
-            var manager = LoadAudioDataManager();
+            var manager = LoadAudioAlbumManager();
             if (manager == null)
                 return null;
 
@@ -83,7 +83,7 @@ namespace BattleTurn.AudioManager.Editor
             }
         }
 
-        private static AudioAlbumManagerSO LoadAudioDataManager()
+        private static AudioAlbumManagerSO LoadAudioAlbumManager()
         {
             var guids = AssetDatabase.FindAssets($"t:{nameof(AudioAlbumManagerSO)}");
             if (guids == null)
