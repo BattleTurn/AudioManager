@@ -8,18 +8,20 @@ namespace BattleTurn.AudioManager.Editor
     [InitializeOnLoad]
     internal static class AudioManagerExtraPackagePrompt
     {
-        private const string KEY_PREFIX = nameof(BattleTurn) + "." + nameof(AudioManager) + ".ExtraPackage::";
+        private const string KEY_PREFIX = nameof(BattleTurn) + "." + nameof(AudioManager) + ".ExtraPackage.V2::";
 
         private static string InstalledKey => KEY_PREFIX + "Installed::" + Application.dataPath;
         private static string PromptShownKey => KEY_PREFIX + "PromptShown::" + Application.dataPath;
         private static string LastPackagePathKey => KEY_PREFIX + "LastPackagePath::" + Application.dataPath;
         private static string PendingImportKey => KEY_PREFIX + "PendingImport::" + Application.dataPath;
+        private static string PromptQueuedKey => KEY_PREFIX + "PromptQueued::" + Application.dataPath;
 
         static AudioManagerExtraPackagePrompt()
         {
             AssetDatabase.importPackageCompleted += OnImportPackageCompleted;
             AssetDatabase.importPackageCancelled += OnImportPackageCancelled;
             AssetDatabase.importPackageFailed += OnImportPackageFailed;
+            EditorApplication.delayCall += TryShowPromptOnStartup;
         }
 
         internal static void TryShowPromptOnStartup()
@@ -27,8 +29,17 @@ namespace BattleTurn.AudioManager.Editor
             if (IsExtraInstalled() || EditorPrefs.GetBool(PromptShownKey, false))
                 return;
 
+            if (SessionState.GetBool(PromptQueuedKey, false))
+                return;
+
+            SessionState.SetBool(PromptQueuedKey, true);
+            EditorApplication.delayCall += ShowPromptWhenEditorReady;
+        }
+
+        internal static void MarkPromptShown()
+        {
             EditorPrefs.SetBool(PromptShownKey, true);
-            EditorApplication.delayCall += AudioManagerExtraPackageWindow.ShowWindow;
+            SessionState.SetBool(PromptQueuedKey, false);
         }
 
         internal static bool IsExtraInstalled()
@@ -40,7 +51,26 @@ namespace BattleTurn.AudioManager.Editor
         {
             EditorPrefs.SetBool(InstalledKey, true);
             EditorPrefs.SetBool(PromptShownKey, true);
+            SessionState.SetBool(PromptQueuedKey, false);
             SessionState.SetBool(PendingImportKey, false);
+        }
+
+        private static void ShowPromptWhenEditorReady()
+        {
+            if (IsExtraInstalled() || EditorPrefs.GetBool(PromptShownKey, false))
+            {
+                SessionState.SetBool(PromptQueuedKey, false);
+                return;
+            }
+
+            if (EditorApplication.isCompiling || EditorApplication.isUpdating)
+            {
+                EditorApplication.delayCall += ShowPromptWhenEditorReady;
+                return;
+            }
+
+            SessionState.SetBool(PromptQueuedKey, false);
+            AudioManagerExtraPackageWindow.ShowWindow();
         }
 
         internal static string GetDefaultPackagePath()
@@ -150,6 +180,7 @@ namespace BattleTurn.AudioManager.Editor
         [MenuItem("Audio/Import Extra Package")]
         internal static void ShowWindow()
         {
+            AudioManagerExtraPackagePrompt.MarkPromptShown();
             var window = GetWindow<AudioManagerExtraPackageWindow>(true, "AudioManager Extra", true);
             window.minSize = new Vector2(540f, 220f);
             window.Show();
