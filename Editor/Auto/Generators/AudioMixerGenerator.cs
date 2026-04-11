@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Text;
 using UnityEngine;
 using UnityEditor;
 using UnityEngine.Audio;
@@ -201,6 +202,10 @@ namespace BattleTurn.AudioManager.Editor
                 }
 
                 File.Copy(sourceAbsolutePath, destinationAbsolutePath, overwrite: true);
+
+                if (!TrySetCopiedMixerAssetName(destinationAbsolutePath, Path.GetFileNameWithoutExtension(destinationAbsolutePath), out error))
+                    return false;
+
                 return true;
             }
             catch (Exception ex)
@@ -259,6 +264,54 @@ namespace BattleTurn.AudioManager.Editor
             }
 
             return true;
+        }
+
+        private static bool TrySetCopiedMixerAssetName(string mixerAbsolutePath, string targetName, out string error)
+        {
+            error = null;
+
+            if (string.IsNullOrWhiteSpace(mixerAbsolutePath) || string.IsNullOrWhiteSpace(targetName))
+            {
+                error = "AudioMixerGenerator: Missing mixer path or target asset name.";
+                return false;
+            }
+
+            try
+            {
+                var lines = File.ReadAllLines(mixerAbsolutePath);
+                var insideAudioMixerController = false;
+
+                for (var i = 0; i < lines.Length; i++)
+                {
+                    var trimmedLine = lines[i].Trim();
+                    if (trimmedLine == "AudioMixerController:")
+                    {
+                        insideAudioMixerController = true;
+                        continue;
+                    }
+
+                    if (!insideAudioMixerController)
+                        continue;
+
+                    if (trimmedLine.StartsWith("m_Name:", StringComparison.Ordinal))
+                    {
+                        lines[i] = "  m_Name: " + targetName;
+                        File.WriteAllLines(mixerAbsolutePath, lines, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+                        return true;
+                    }
+
+                    if (trimmedLine.StartsWith("--- !u!", StringComparison.Ordinal))
+                        break;
+                }
+
+                error = "AudioMixerGenerator: Could not find AudioMixerController name field to normalize.";
+                return false;
+            }
+            catch (Exception ex)
+            {
+                error = $"AudioMixerGenerator: Failed to normalize mixer asset name. {ex.Message}";
+                return false;
+            }
         }
 
         private static string GetAbsolutePathFromUnityPath(string unityPath)

@@ -88,13 +88,19 @@ namespace BattleTurn.AudioManager.Editor
         {
             var changed = false;
 
-            var sfxAlbum = EnsureDefaultAudioAlbumExists(AudioNameConstants.SFX, DEFAULT_SFX_AUDIO_ALBUM_ASSET_PATH);
-            var mfxAlbum = EnsureDefaultAudioAlbumExists(AudioNameConstants.MFX, DEFAULT_MFX_AUDIO_ALBUM_ASSET_PATH);
-
-            changed |= EnsureAudioAlbumInArray(audioAlbumsProp, sfxAlbum);
-            changed |= EnsureAudioAlbumInArray(audioAlbumsProp, mfxAlbum);
+            changed |= EnsureNamedAudioAlbumExists(audioAlbumsProp, AudioNameConstants.SFX, DEFAULT_SFX_AUDIO_ALBUM_ASSET_PATH);
+            changed |= EnsureNamedAudioAlbumExists(audioAlbumsProp, AudioNameConstants.MFX, DEFAULT_MFX_AUDIO_ALBUM_ASSET_PATH);
 
             return changed;
+        }
+
+        private static bool EnsureNamedAudioAlbumExists(SerializedProperty audioAlbumsProp, string albumName, string assetPath)
+        {
+            if (FindAudioAlbumInArrayByName(audioAlbumsProp, albumName) != null)
+                return false;
+
+            var album = FindExistingAudioAlbumAsset(albumName, assetPath) ?? EnsureDefaultAudioAlbumExists(albumName, assetPath);
+            return EnsureAudioAlbumInArray(audioAlbumsProp, album);
         }
 
         private static bool WireAudioDataArray(SerializedProperty audioAlbumsProp, AudioMixerGroup sfxGroup, AudioMixerGroup mfxGroup)
@@ -125,13 +131,51 @@ namespace BattleTurn.AudioManager.Editor
             for (var index = 0; index < audioAlbumsProp.arraySize; index++)
             {
                 var element = audioAlbumsProp.GetArrayElementAtIndex(index);
-                if (ReferenceEquals(element.objectReferenceValue, album))
+                var existingAlbum = element.objectReferenceValue as AudioAlbumBaseSO;
+                if (ReferenceEquals(existingAlbum, album) || IsMatchingAlbumName(existingAlbum, album.Name))
                     return false;
             }
 
             audioAlbumsProp.arraySize++;
             audioAlbumsProp.GetArrayElementAtIndex(audioAlbumsProp.arraySize - 1).objectReferenceValue = album;
             return true;
+        }
+
+        private static AudioAlbumBaseSO FindAudioAlbumInArrayByName(SerializedProperty audioAlbumsProp, string albumName)
+        {
+            if (audioAlbumsProp == null || !audioAlbumsProp.isArray)
+                return null;
+
+            for (var index = 0; index < audioAlbumsProp.arraySize; index++)
+            {
+                var element = audioAlbumsProp.GetArrayElementAtIndex(index);
+                var audioAlbum = element.objectReferenceValue as AudioAlbumBaseSO;
+                if (IsMatchingAlbumName(audioAlbum, albumName))
+                    return audioAlbum;
+            }
+
+            return null;
+        }
+
+        private static AudioAlbumBaseSO FindExistingAudioAlbumAsset(string albumName, string assetPath)
+        {
+            var existingDefaultAsset = AssetDatabase.LoadAssetAtPath<AudioAlbumBaseSO>(assetPath);
+            if (IsMatchingAlbumName(existingDefaultAsset, albumName))
+                return existingDefaultAsset;
+
+            var guids = AssetDatabase.FindAssets(albumName);
+            if (guids == null || guids.Length == 0)
+                return null;
+
+            for (var i = 0; i < guids.Length; i++)
+            {
+                var path = AssetDatabase.GUIDToAssetPath(guids[i]);
+                var audioAlbum = AssetDatabase.LoadAssetAtPath<AudioAlbumBaseSO>(path);
+                if (IsMatchingAlbumName(audioAlbum, albumName))
+                    return audioAlbum;
+            }
+
+            return null;
         }
 
         private static AudioAlbumBaseSO EnsureDefaultAudioAlbumExists(string albumName, string assetPath)
@@ -173,6 +217,13 @@ namespace BattleTurn.AudioManager.Editor
             nameProp.stringValue = albumName;
             serializedObject.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(audioAlbum);
+        }
+
+        private static bool IsMatchingAlbumName(AudioAlbumBaseSO audioAlbum, string albumName)
+        {
+            return audioAlbum != null
+                   && !string.IsNullOrWhiteSpace(albumName)
+                   && string.Equals(audioAlbum.Name, albumName, StringComparison.Ordinal);
         }
 
         private static bool WireAudioDataMixerGroup(AudioAlbumBaseSO audioDataSO, AudioMixerGroup sfxGroup, AudioMixerGroup mfxGroup)

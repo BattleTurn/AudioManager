@@ -9,10 +9,10 @@ namespace BattleTurn.AudioManager.Editor
     internal static class AudioManagerExtraPackagePrompt
     {
         private const string KEY_PREFIX = nameof(BattleTurn) + "." + nameof(AudioManager) + ".ExtraPackage.V2::";
+        private const string EXTRA_PACKAGE_UNITY_PATH = "Packages/AudioManager/Editor/Extras/AudioManager(Extra).unitypackage";
 
         private static string InstalledKey => KEY_PREFIX + "Installed::" + Application.dataPath;
         private static string PromptShownKey => KEY_PREFIX + "PromptShown::" + Application.dataPath;
-        private static string LastPackagePathKey => KEY_PREFIX + "LastPackagePath::" + Application.dataPath;
         private static string PendingImportKey => KEY_PREFIX + "PendingImport::" + Application.dataPath;
         private static string PromptQueuedKey => KEY_PREFIX + "PromptQueued::" + Application.dataPath;
 
@@ -73,73 +73,38 @@ namespace BattleTurn.AudioManager.Editor
             AudioManagerExtraPackageWindow.ShowWindow();
         }
 
-        internal static string GetDefaultPackagePath()
+        internal static bool TryImportExtraPackage()
         {
-            var savedPath = GetLastPackagePath();
-            if (!string.IsNullOrWhiteSpace(savedPath) && File.Exists(savedPath))
-                return savedPath;
-
-            var autoDetectedPath = FindPackageUnderAudioManager();
-            if (!string.IsNullOrWhiteSpace(autoDetectedPath))
-            {
-                SetLastPackagePath(autoDetectedPath);
-                return autoDetectedPath;
-            }
-
-            return string.Empty;
-        }
-
-        internal static void SetLastPackagePath(string packagePath)
-        {
-            if (string.IsNullOrWhiteSpace(packagePath))
-                return;
-
-            EditorPrefs.SetString(LastPackagePathKey, packagePath);
-        }
-
-        internal static bool TryImportExtraPackage(string packagePath)
-        {
+            var packagePath = GetAbsolutePathFromUnityPath(EXTRA_PACKAGE_UNITY_PATH);
             if (string.IsNullOrWhiteSpace(packagePath) || !File.Exists(packagePath))
             {
-                EditorUtility.DisplayDialog("AudioManager Extra", "Cannot find the selected .unitypackage file.", "OK");
+                EditorUtility.DisplayDialog("AudioManager Extra", $"Cannot find Extra package at '{EXTRA_PACKAGE_UNITY_PATH}'.", "OK");
                 return false;
             }
 
-            SetLastPackagePath(packagePath);
             SessionState.SetBool(PendingImportKey, true);
             AssetDatabase.ImportPackage(packagePath, true);
             return true;
         }
 
-        private static string GetLastPackagePath()
+        internal static bool HasImportPackage()
         {
-            return EditorPrefs.GetString(LastPackagePathKey, string.Empty);
+            var packagePath = GetAbsolutePathFromUnityPath(EXTRA_PACKAGE_UNITY_PATH);
+            return !string.IsNullOrWhiteSpace(packagePath) && File.Exists(packagePath);
         }
 
-        private static string FindPackageUnderAudioManager()
+        private static string GetAbsolutePathFromUnityPath(string unityPath)
         {
-            var projectRoot = Directory.GetParent(Application.dataPath)?.FullName;
-            if (string.IsNullOrWhiteSpace(projectRoot))
+            if (string.IsNullOrWhiteSpace(unityPath))
                 return string.Empty;
 
-            var packageRoot = Path.Combine(projectRoot, "Packages", "AudioManager");
-            if (!Directory.Exists(packageRoot))
-                return string.Empty;
+            if (unityPath.StartsWith("Packages/", StringComparison.Ordinal))
+                return Path.GetFullPath(Path.Combine(Application.dataPath, "..", unityPath));
 
-            var unityPackages = Directory.GetFiles(packageRoot, "*.unitypackage", SearchOption.AllDirectories);
-            if (unityPackages == null || unityPackages.Length == 0)
-                return string.Empty;
+            if (unityPath.StartsWith("Assets/", StringComparison.Ordinal))
+                return Path.GetFullPath(Path.Combine(Application.dataPath, unityPath.Substring("Assets/".Length)));
 
-            Array.Sort(unityPackages, StringComparer.OrdinalIgnoreCase);
-
-            foreach (var unityPackage in unityPackages)
-            {
-                var fileName = Path.GetFileName(unityPackage);
-                if (fileName.IndexOf("Extra", StringComparison.OrdinalIgnoreCase) >= 0)
-                    return unityPackage;
-            }
-
-            return unityPackages[0];
+            return unityPath;
         }
 
         private static void OnImportPackageCompleted(string packageName)
@@ -175,8 +140,6 @@ namespace BattleTurn.AudioManager.Editor
     {
         private const float BUTTON_HEIGHT = 28f;
 
-        private string _packagePath;
-
         [MenuItem("Audio/Import Extra Package")]
         internal static void ShowWindow()
         {
@@ -198,7 +161,6 @@ namespace BattleTurn.AudioManager.Editor
 
         private void OnEnable()
         {
-            _packagePath = AudioManagerExtraPackagePrompt.GetDefaultPackagePath();
         }
 
         private void OnGUI()
@@ -206,40 +168,20 @@ namespace BattleTurn.AudioManager.Editor
             EditorGUILayout.Space();
             EditorGUILayout.LabelField("AudioManager Extra", EditorStyles.boldLabel);
             EditorGUILayout.HelpBox(
-                "This project has not marked AudioManager Extra as installed yet. Import the .unitypackage below, or confirm that you already installed it manually.",
+                "This project has not marked AudioManager Extra as installed yet. Import the bundled Extra package from Packages/AudioManager/Editor/Extras, or confirm that you already installed it manually.",
                 MessageType.Info);
 
-            EditorGUILayout.Space();
-            EditorGUILayout.LabelField("Package Path", EditorStyles.miniBoldLabel);
-
-            using (new EditorGUILayout.HorizontalScope())
-            {
-                using (new EditorGUI.DisabledScope(true))
-                {
-                    EditorGUILayout.TextField(_packagePath ?? string.Empty);
-                }
-
-                if (GUILayout.Button("Browse", GUILayout.Width(90f)))
-                    BrowsePackage();
-            }
-
-            if (string.IsNullOrWhiteSpace(_packagePath))
+            if (!AudioManagerExtraPackagePrompt.HasImportPackage())
             {
                 EditorGUILayout.HelpBox(
-                    "No .unitypackage was auto-detected under Packages/AudioManager. Use Browse to select the Extra package manually.",
-                    MessageType.Warning);
-            }
-            else if (!File.Exists(_packagePath))
-            {
-                EditorGUILayout.HelpBox(
-                    "The saved .unitypackage path no longer exists. Select a valid file before importing.",
+                    "The bundled Extra package could not be found at Packages/AudioManager/Editor/Extras/AudioManager(Extra).unitypackage.",
                     MessageType.Warning);
             }
 
             GUILayout.FlexibleSpace();
 
             if (GUILayout.Button("Import Extra", GUILayout.Height(BUTTON_HEIGHT)))
-                ImportSelectedPackage();
+                ImportExtraPackage();
 
             if (GUILayout.Button("Already Installed", GUILayout.Height(BUTTON_HEIGHT)))
             {
@@ -248,43 +190,10 @@ namespace BattleTurn.AudioManager.Editor
             }
         }
 
-        private void ImportSelectedPackage()
+        private void ImportExtraPackage()
         {
-            if (string.IsNullOrWhiteSpace(_packagePath) || !File.Exists(_packagePath))
-            {
-                BrowsePackage();
-                if (string.IsNullOrWhiteSpace(_packagePath) || !File.Exists(_packagePath))
-                    return;
-            }
-
-            if (AudioManagerExtraPackagePrompt.TryImportExtraPackage(_packagePath))
+            if (AudioManagerExtraPackagePrompt.TryImportExtraPackage())
                 Close();
-        }
-
-        private void BrowsePackage()
-        {
-            var startingDirectory = GetStartingDirectory();
-            var selectedPath = EditorUtility.OpenFilePanel("Select AudioManager Extra", startingDirectory, "unitypackage");
-
-            if (string.IsNullOrWhiteSpace(selectedPath))
-                return;
-
-            _packagePath = selectedPath;
-            AudioManagerExtraPackagePrompt.SetLastPackagePath(selectedPath);
-            Repaint();
-        }
-
-        private string GetStartingDirectory()
-        {
-            if (!string.IsNullOrWhiteSpace(_packagePath) && File.Exists(_packagePath))
-                return Path.GetDirectoryName(_packagePath) ?? string.Empty;
-
-            var projectRoot = Directory.GetParent(Application.dataPath)?.FullName;
-            if (string.IsNullOrWhiteSpace(projectRoot))
-                return string.Empty;
-
-            var audioManagerFolder = Path.Combine(projectRoot, "Packages", "AudioManager");
-            return Directory.Exists(audioManagerFolder) ? audioManagerFolder : projectRoot;
         }
     }
 }
