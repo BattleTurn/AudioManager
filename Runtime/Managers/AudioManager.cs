@@ -16,7 +16,7 @@ namespace BattleTurn.AudioManager.Runtime
 
         [SerializeField] private byte _prewarmAudioSourceAmount = 2;
         [Expandable]
-        [SerializeField] protected AudioDataManagerSO audioManager;
+        [SerializeField] protected AudioAlbumManagerSO audioManager;
 
         public abstract string Key { get; }
 

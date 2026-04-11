@@ -17,7 +17,7 @@ namespace BattleTurn.AudioManager.Editor
             if (audioData == null)
                 return;
 
-            AudioDataSOEditor.DrawValidation(audioData);
+            AudioAlbumSOEditor.DrawValidation(audioData);
 
             serializedObject.ApplyModifiedProperties();
         }

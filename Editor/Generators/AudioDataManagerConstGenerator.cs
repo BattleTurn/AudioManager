@@ -8,7 +8,7 @@ namespace BattleTurn.AudioManager.Editor
     {
         private const string GENERATED_FOLDER_PATH = CodeGenerationUtils.GENERATED_FOLDER_PATH + "/Managers";
 
-        public static bool Build(AudioDataManagerSO audioDataManager)
+        public static bool Build(AudioAlbumManagerSO audioDataManager)
         {
             if (audioDataManager == null)
                 return false;
@@ -24,7 +24,7 @@ namespace BattleTurn.AudioManager.Editor
             return didGenerateConstants;
         }
 
-        internal static string GenerateSource(AudioDataManagerSO audioDataManager, string rootClassName = null)
+        internal static string GenerateSource(AudioAlbumManagerSO audioDataManager, string rootClassName = null)
         {
             rootClassName ??= GetRootClassName();
 
@@ -97,13 +97,13 @@ namespace BattleTurn.AudioManager.Editor
             GenerateFileUtil.AppendStaticClassEnd(sb, indentLevel);
         }
 
-        private static IEnumerable<AudioAlbumBaseSO> EnumerateAudioDatas(AudioDataManagerSO audioDataManager)
+        private static IEnumerable<AudioAlbumBaseSO> EnumerateAudioDatas(AudioAlbumManagerSO audioDataManager)
         {
-            if (audioDataManager?.AudioDatas == null)
+            if (audioDataManager?.AudioAlbums == null)
                 yield break;
 
             var seen = new HashSet<AudioAlbumBaseSO>();
-            foreach (var audioData in audioDataManager.AudioDatas)
+            foreach (var audioData in audioDataManager.AudioAlbums)
             {
                 if (audioData == null || !seen.Add(audioData))
                     continue;

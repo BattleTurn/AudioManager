@@ -7,13 +7,13 @@ using UnityEngine.Audio;
 namespace BattleTurn.AudioManager.Runtime
 {
     [CreateAssetMenu(fileName = TYPE_NAME, menuName = CREATE_ASSET_PATH)]
-    public sealed class AudioDataManagerSO : ScriptableObject
+    public sealed class AudioAlbumManagerSO : ScriptableObject
     {
         private const string CREATE_ASSET_PATH = ScriptableConstants.ASSET_MENU_PATH + TYPE_NAME;
-        private const string TYPE_NAME = nameof(AudioDataManagerSO);
+        private const string TYPE_NAME = nameof(AudioAlbumManagerSO);
 
         [Expandable]
-        [SerializeField] private AudioAlbumBaseSO[] _audioDatas;
+        [SerializeField] private AudioAlbumBaseSO[] _audioAlbums;
 
         [Foldout(GroupConstants.DEBUG)]
         [ReadOnly]
@@ -30,7 +30,7 @@ namespace BattleTurn.AudioManager.Runtime
         #region PROPERTIES
         public AudioAlbumBaseSO SFXData => TryGetAudioData(AudioNameConstants.SFX, out var sfxData) ? sfxData : null;
         public AudioAlbumBaseSO MFXData => TryGetAudioData(AudioNameConstants.MFX, out var musicData) ? musicData : null;
-        public IReadOnlyList<AudioAlbumBaseSO> AudioDatas => _audioDatas;
+        public IReadOnlyList<AudioAlbumBaseSO> AudioAlbums => _audioAlbums;
         public AudioMixer AudioMixer => _audioMixer;
         public AudioMixerGroup MasterGroup => _masterGroup;
 
@@ -68,7 +68,7 @@ namespace BattleTurn.AudioManager.Runtime
                 return true;
             }
 
-            throw new ArgumentOutOfRangeException(nameof(audioDataName), $"❌ AudioData '{audioDataName}' not in {_audioDatas}");
+            throw new ArgumentOutOfRangeException(nameof(audioDataName), $"❌ AudioData '{audioDataName}' not in {_audioAlbums}");
         }
 
         private void EnsureInitialized()
@@ -77,7 +77,7 @@ namespace BattleTurn.AudioManager.Runtime
                 return;
 
             _audioDataDict.Clear();
-            foreach (var audioData in _audioDatas)
+            foreach (var audioData in _audioAlbums)
             {
                 if (audioData == null)
                     continue;
@@ -105,10 +105,10 @@ namespace BattleTurn.AudioManager.Runtime
             if (_audioDataDict == null || _audioDataDict.Count == 0)
                 return false;
 
-            if (_audioDatas.Length != _audioDataDict.Count)
+            if (_audioAlbums.Length != _audioDataDict.Count)
                 return false;
 
-            foreach (var audioData in _audioDatas)
+            foreach (var audioData in _audioAlbums)
             {
                 if (audioData == null)
                     return false;

@@ -5,7 +5,7 @@ using BattleTurn.AudioManager.Runtime;
 using UnityEditor;
 using UnityEngine.Audio;
 
-using RuntimeAudioManager = BattleTurn.AudioManager.Runtime.AudioDataManagerSO;
+using RuntimeAudioManager = BattleTurn.AudioManager.Runtime.AudioAlbumManagerSO;
 
 namespace BattleTurn.AudioManager.Editor
 {

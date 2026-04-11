@@ -7,7 +7,7 @@ using NaughtyAttributes.Editor;
 namespace BattleTurn.AudioManager.Editor
 {
     [CustomEditor(typeof(AudioAlbumSO))]
-    public class AudioDataSOEditor : NaughtyInspector
+    public class AudioAlbumSOEditor : NaughtyInspector
     {
         public override void OnInspectorGUI()
         {

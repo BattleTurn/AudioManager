@@ -5,8 +5,8 @@ using UnityEngine;
 
 namespace BattleTurn.AudioManager.Editor
 {
-    [CustomEditor(typeof(Runtime.AudioDataManagerSO))]
-    internal sealed class AudioDataManagerSOEditor : NaughtyInspector
+    [CustomEditor(typeof(Runtime.AudioAlbumManagerSO))]
+    internal sealed class AudioAlbumManagerSOEditor : NaughtyInspector
     {
         private EditorWindow _lastFocusedWindow;
         private bool _isPromptOpen;
@@ -34,13 +34,13 @@ namespace BattleTurn.AudioManager.Editor
             {
                 GUILayout.FlexibleSpace();
 
-                if (GUILayout.Button("Build AudioData", GUILayout.Width(180)))
+                if (GUILayout.Button($"Build {nameof(Runtime.AudioAlbumManagerSO)}", GUILayout.Width(180)))
                 {
-                    var audioManager = (Runtime.AudioDataManagerSO)target;
+                    var audioManager = (Runtime.AudioAlbumManagerSO)target;
                     bool didBuild = ApplyAudioDataChanges(audioManager);
                     Debug.Log(didBuild
-                        ? "Built AudioData generated code"
-                        : "AudioData generated code is already up to date");
+                        ? $"Built {nameof(Runtime.AudioAlbumManagerSO)} generated code"
+                        : $"{nameof(Runtime.AudioAlbumManagerSO)} generated code is already up to date");
                 }
             }
         }
@@ -70,15 +70,15 @@ namespace BattleTurn.AudioManager.Editor
             try
             {
                 int choice = EditorUtility.DisplayDialogComplex(
-                    "Apply AudioData changes",
-                    "AudioDataManagerSO has unapplied changes. Do you want to apply and generate code before leaving the Inspector?",
+                    "Apply AudioAlbum changes",
+                    $"{nameof(Runtime.AudioAlbumManagerSO)} has unapplied changes. Do you want to apply and generate code before leaving the Inspector?",
                     "Apply",
                     "Keep Editing",
                     "Ignore");
 
                 if (choice == 0)
                 {
-                    ApplyAudioDataChanges((Runtime.AudioDataManagerSO)target);
+                    ApplyAudioDataChanges((Runtime.AudioAlbumManagerSO)target);
                 }
                 else if (choice == 1)
                 {
@@ -93,7 +93,7 @@ namespace BattleTurn.AudioManager.Editor
             }
         }
 
-        private static bool ApplyAudioDataChanges(Runtime.AudioDataManagerSO audioManager)
+        private static bool ApplyAudioDataChanges(Runtime.AudioAlbumManagerSO audioManager)
         {
             if (audioManager == null)
                 return false;

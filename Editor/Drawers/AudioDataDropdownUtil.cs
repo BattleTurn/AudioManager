@@ -83,16 +83,16 @@ namespace BattleTurn.AudioManager.Editor
             }
         }
 
-        private static AudioDataManagerSO LoadAudioDataManager()
+        private static AudioAlbumManagerSO LoadAudioDataManager()
         {
-            var guids = AssetDatabase.FindAssets($"t:{nameof(AudioDataManagerSO)}");
+            var guids = AssetDatabase.FindAssets($"t:{nameof(AudioAlbumManagerSO)}");
             if (guids == null)
                 return null;
 
             foreach (var guid in guids)
             {
                 var path = AssetDatabase.GUIDToAssetPath(guid);
-                var manager = AssetDatabase.LoadAssetAtPath<AudioDataManagerSO>(path);
+                var manager = AssetDatabase.LoadAssetAtPath<AudioAlbumManagerSO>(path);
                 if (manager != null)
                     return manager;
             }
