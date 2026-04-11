@@ -26,7 +26,7 @@ namespace BattleTurn.AudioManager.Editor
             AudioMixerGroupNameGenerator.EnsureGeneratedIfMissing();
 
             var mixer = AssetDatabase.LoadAssetAtPath<AudioMixer>($"{CodeGenerationUtils.GENERATED_FOLDER_PATH}/GameMixer.mixer");
-            AudioManagerMixerAutoRef.WireAllAudioDataManagerAssets(mixer);
+            AlbumManagerAutoRef.WireAllAudioDataManagerAssets(mixer);
             AudioManagerExtraPackagePrompt.TryShowPromptOnStartup();
         }
     }

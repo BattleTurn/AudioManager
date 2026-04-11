@@ -6,11 +6,15 @@ using BattleTurn.AudioManager.Runtime;
 
 namespace BattleTurn.AudioManager.Editor
 {
-    internal static class AudioManagerMixerAutoRef
+    internal static class AlbumManagerAutoRef
     {
         private const string AUDIO_DATA_MANAGER_PATH = CodeGenerationUtils.GENERATED_SCRIPTABLE_OBJECT_PATH
         + "/Managers";
+        private const string AUDIO_ALBUM_PATH = CodeGenerationUtils.GENERATED_SCRIPTABLE_OBJECT_PATH
+        + "/Albums";
         private const string DEFAULT_AUDIO_DATA_MANAGER_ASSET_PATH = AUDIO_DATA_MANAGER_PATH + "/" + nameof(AudioAlbumManagerSO) + ".asset";
+        private const string DEFAULT_SFX_AUDIO_ALBUM_ASSET_PATH = AUDIO_ALBUM_PATH + "/SFXSO.asset";
+        private const string DEFAULT_MFX_AUDIO_ALBUM_ASSET_PATH = AUDIO_ALBUM_PATH + "/MFXSO.asset";
 
         internal static bool WireAllAudioDataManagerAssets(AudioMixer mixer)
         {
@@ -64,10 +68,11 @@ namespace BattleTurn.AudioManager.Editor
             changedThis |= TrySetObjectReference(so, "_masterGroup", masterGroup);
 
             // Wire audio data entries
-            var audioDatasProp = so.FindProperty("_audioDatas");
-            if (audioDatasProp != null && audioDatasProp.isArray)
+            var audioAlbumsProp = so.FindProperty("_audioAlbums");
+            if (audioAlbumsProp != null && audioAlbumsProp.isArray)
             {
-                changedThis |= WireAudioDataArray(audioDatasProp, sfxGroup, mfxGroup);
+                changedThis |= EnsureDefaultAudioAlbumsExist(audioAlbumsProp);
+                changedThis |= WireAudioDataArray(audioAlbumsProp, sfxGroup, mfxGroup);
             }
 
             if (changedThis)
@@ -79,18 +84,31 @@ namespace BattleTurn.AudioManager.Editor
             return changedThis;
         }
 
-        private static bool WireAudioDataArray(SerializedProperty audioDatasProp, AudioMixerGroup sfxGroup, AudioMixerGroup mfxGroup)
+        private static bool EnsureDefaultAudioAlbumsExist(SerializedProperty audioAlbumsProp)
+        {
+            var changed = false;
+
+            var sfxAlbum = EnsureDefaultAudioAlbumExists(AudioNameConstants.SFX, DEFAULT_SFX_AUDIO_ALBUM_ASSET_PATH);
+            var mfxAlbum = EnsureDefaultAudioAlbumExists(AudioNameConstants.MFX, DEFAULT_MFX_AUDIO_ALBUM_ASSET_PATH);
+
+            changed |= EnsureAudioAlbumInArray(audioAlbumsProp, sfxAlbum);
+            changed |= EnsureAudioAlbumInArray(audioAlbumsProp, mfxAlbum);
+
+            return changed;
+        }
+
+        private static bool WireAudioDataArray(SerializedProperty audioAlbumsProp, AudioMixerGroup sfxGroup, AudioMixerGroup mfxGroup)
         {
             var anyChanged = false;
 
-            for (int i = 0; i < audioDatasProp.arraySize; i++)
+            for (int i = 0; i < audioAlbumsProp.arraySize; i++)
             {
-                var audioDataRefProp = audioDatasProp.GetArrayElementAtIndex(i);
-                var audioDataSO = audioDataRefProp.objectReferenceValue as AudioAlbumSO;
-                if (audioDataSO == null)
+                var audioDataRefProp = audioAlbumsProp.GetArrayElementAtIndex(i);
+                var audioAlbum = audioDataRefProp.objectReferenceValue as AudioAlbumBaseSO;
+                if (audioAlbum == null)
                     continue;
 
-                if (WireAudioDataMixerGroup(audioDataSO, sfxGroup, mfxGroup))
+                if (WireAudioDataMixerGroup(audioAlbum, sfxGroup, mfxGroup))
                 {
                     anyChanged = true;
                 }
@@ -99,7 +117,65 @@ namespace BattleTurn.AudioManager.Editor
             return anyChanged;
         }
 
-        private static bool WireAudioDataMixerGroup(AudioAlbumSO audioDataSO, AudioMixerGroup sfxGroup, AudioMixerGroup mfxGroup)
+        private static bool EnsureAudioAlbumInArray(SerializedProperty audioAlbumsProp, AudioAlbumBaseSO album)
+        {
+            if (audioAlbumsProp == null || !audioAlbumsProp.isArray || album == null)
+                return false;
+
+            for (var index = 0; index < audioAlbumsProp.arraySize; index++)
+            {
+                var element = audioAlbumsProp.GetArrayElementAtIndex(index);
+                if (ReferenceEquals(element.objectReferenceValue, album))
+                    return false;
+            }
+
+            audioAlbumsProp.arraySize++;
+            audioAlbumsProp.GetArrayElementAtIndex(audioAlbumsProp.arraySize - 1).objectReferenceValue = album;
+            return true;
+        }
+
+        private static AudioAlbumBaseSO EnsureDefaultAudioAlbumExists(string albumName, string assetPath)
+        {
+            var existing = AssetDatabase.LoadAssetAtPath<AudioTemplateAlbumSO>(assetPath);
+            if (existing != null)
+            {
+                EnsureAudioAlbumName(existing, albumName);
+                return existing;
+            }
+
+            EnsureFolderExists(AUDIO_ALBUM_PATH);
+
+            var instance = ScriptableObject.CreateInstance<AudioTemplateAlbumSO>();
+            if (instance == null)
+            {
+                Debug.LogWarning($"AudioManagerMixerAutoRef: Failed to create {albumName} AudioTemplateAlbumSO instance.");
+                return null;
+            }
+
+            AssetDatabase.CreateAsset(instance, assetPath);
+            EnsureAudioAlbumName(instance, albumName);
+            AssetDatabase.SaveAssets();
+            AssetDatabase.ImportAsset(assetPath, ImportAssetOptions.ForceUpdate);
+
+            return AssetDatabase.LoadAssetAtPath<AudioTemplateAlbumSO>(assetPath);
+        }
+
+        private static void EnsureAudioAlbumName(AudioAlbumBaseSO audioAlbum, string albumName)
+        {
+            if (audioAlbum == null || string.IsNullOrWhiteSpace(albumName))
+                return;
+
+            var serializedObject = new SerializedObject(audioAlbum);
+            var nameProp = serializedObject.FindProperty("_name");
+            if (nameProp == null || string.Equals(nameProp.stringValue, albumName, StringComparison.Ordinal))
+                return;
+
+            nameProp.stringValue = albumName;
+            serializedObject.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(audioAlbum);
+        }
+
+        private static bool WireAudioDataMixerGroup(AudioAlbumBaseSO audioDataSO, AudioMixerGroup sfxGroup, AudioMixerGroup mfxGroup)
         {
             var audioDataSerializedObj = new SerializedObject(audioDataSO);
             var nameProp = audioDataSerializedObj.FindProperty("_name");
