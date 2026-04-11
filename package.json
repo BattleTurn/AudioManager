@@ -1,5 +1,5 @@
 {
-  "name": "battleturn.audio_manager",
+  "name": "battleturn.audiomanager",
   "displayName": "Audio Manager",
   "version": "1.0.0",
   "unity": "2022.1",
@@ -9,8 +9,6 @@
     "Audio"
   ],
   "category": "Scripting",
-  "dependencies": {
-  },
   "repository": {
     "url": "https://github.com/BattleTurn/AudioManager.git",
     "type": "git"
