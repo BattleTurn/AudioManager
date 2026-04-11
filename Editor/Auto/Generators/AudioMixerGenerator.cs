@@ -5,6 +5,7 @@ using System.Text;
 using UnityEngine;
 using UnityEditor;
 using UnityEngine.Audio;
+using BattleTurn.AudioManager.Runtime;
 
 namespace BattleTurn.AudioManager.Editor
 {
@@ -61,7 +62,7 @@ namespace BattleTurn.AudioManager.Editor
             EditorGUIUtility.PingObject(newMixer);
         }
 
-        [MenuItem("Tools/Audio/Update Mixer Exposed Parameter")]
+        [MenuItem("Tools/Audio/🔄(Update) 🎚️(Mixer) Exposed Parameter")]
         public static void UpdateMixerExposedParameter()
         {
             var did = AudioMixerExposedParameterGenerator.BuildFromMixerPath(OUTPUT_PATH);
@@ -70,7 +71,7 @@ namespace BattleTurn.AudioManager.Editor
                 : "ℹ️ AudioMixerExposedParameter is already up to date or mixer missing");
         }
 
-        [MenuItem("Tools/Audio/Update Mixer Group Names")]
+        [MenuItem("Tools/Audio/🔄(Update) 🎚️(Mixer) Group Names")]
         public static void UpdateMixerGroupNames()
         {
             var did = AudioMixerGroupNameGenerator.BuildFromMixerPath(OUTPUT_PATH);
@@ -79,7 +80,7 @@ namespace BattleTurn.AudioManager.Editor
                 : "ℹ️ AudioMixerGroupName is already up to date or mixer missing");
         }
 
-        [MenuItem("Tools/Audio/Auto Wire AudioAlbumManager AudioMixer")]
+        [MenuItem("Tools/Audio/🔌(Wire) " + nameof(AudioAlbumManagerSO) + " " + nameof(AudioMixer))]
         public static void AutoWireAudioAlbumManagerMixer()
         {
             var mixer = AssetDatabase.LoadAssetAtPath<AudioMixer>(OUTPUT_PATH);

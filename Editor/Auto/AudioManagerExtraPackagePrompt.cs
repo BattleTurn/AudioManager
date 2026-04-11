@@ -10,6 +10,7 @@ namespace BattleTurn.AudioManager.Editor
     {
         private const string KEY_PREFIX = nameof(BattleTurn) + "." + nameof(AudioManager) + ".ExtraPackage.V2::";
         private const string EXTRA_PACKAGE_UNITY_PATH = "Packages/AudioManager/Editor/Extras/AudioManager(Extra).unitypackage";
+        private const string EXTRA_PACKAGE_RELATIVE_PATH = "Editor/Extras/AudioManager(Extra).unitypackage";
 
         private static string InstalledKey => KEY_PREFIX + "Installed::" + Application.dataPath;
         private static string PromptShownKey => KEY_PREFIX + "PromptShown::" + Application.dataPath;
@@ -75,10 +76,13 @@ namespace BattleTurn.AudioManager.Editor
 
         internal static bool TryImportExtraPackage()
         {
-            var packagePath = GetAbsolutePathFromUnityPath(EXTRA_PACKAGE_UNITY_PATH);
+            var packagePath = GetExtraPackageAbsolutePath();
             if (string.IsNullOrWhiteSpace(packagePath) || !File.Exists(packagePath))
             {
-                EditorUtility.DisplayDialog("AudioManager Extra", $"Cannot find Extra package at '{EXTRA_PACKAGE_UNITY_PATH}'.", "OK");
+                EditorUtility.DisplayDialog(
+                    "AudioManager Extra",
+                    $"Cannot find Extra package. Expected relative path: '{EXTRA_PACKAGE_RELATIVE_PATH}'.",
+                    "OK");
                 return false;
             }
 
@@ -89,8 +93,29 @@ namespace BattleTurn.AudioManager.Editor
 
         internal static bool HasImportPackage()
         {
-            var packagePath = GetAbsolutePathFromUnityPath(EXTRA_PACKAGE_UNITY_PATH);
+            var packagePath = GetExtraPackageAbsolutePath();
             return !string.IsNullOrWhiteSpace(packagePath) && File.Exists(packagePath);
+        }
+
+        private static string GetExtraPackageAbsolutePath()
+        {
+            try
+            {
+                var packageInfo = UnityEditor.PackageManager.PackageInfo.FindForAssembly(typeof(AudioManagerExtraPackagePrompt).Assembly);
+                if (packageInfo != null && !string.IsNullOrWhiteSpace(packageInfo.resolvedPath))
+                {
+                    var candidate = Path.GetFullPath(Path.Combine(packageInfo.resolvedPath, EXTRA_PACKAGE_RELATIVE_PATH));
+                    if (File.Exists(candidate))
+                        return candidate;
+                }
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning($"AudioManager Extra: Failed to resolve package path from assembly. {exception.Message}");
+            }
+
+            var fallbackPath = GetAbsolutePathFromUnityPath(EXTRA_PACKAGE_UNITY_PATH);
+            return File.Exists(fallbackPath) ? fallbackPath : string.Empty;
         }
 
         private static string GetAbsolutePathFromUnityPath(string unityPath)
@@ -140,7 +165,7 @@ namespace BattleTurn.AudioManager.Editor
     {
         private const float BUTTON_HEIGHT = 28f;
 
-        [MenuItem("Audio/Import Extra Package")]
+        [MenuItem("Tools/Audio/📥(Import) Extra 📦(Package)")]
         internal static void ShowWindow()
         {
             AudioManagerExtraPackagePrompt.MarkPromptShown();
@@ -168,13 +193,13 @@ namespace BattleTurn.AudioManager.Editor
             EditorGUILayout.Space();
             EditorGUILayout.LabelField("AudioManager Extra", EditorStyles.boldLabel);
             EditorGUILayout.HelpBox(
-                "This project has not marked AudioManager Extra as installed yet. Import the bundled Extra package from Packages/AudioManager/Editor/Extras, or confirm that you already installed it manually.",
+                "This project has not marked AudioManager Extra as installed yet. Import the bundled Extra package from the current installed package location, or confirm that you already installed it manually.",
                 MessageType.Info);
 
             if (!AudioManagerExtraPackagePrompt.HasImportPackage())
             {
                 EditorGUILayout.HelpBox(
-                    "The bundled Extra package could not be found at Packages/AudioManager/Editor/Extras/AudioManager(Extra).unitypackage.",
+                    "The bundled Extra package could not be found under Editor/Extras/AudioManager(Extra).unitypackage in the installed package path.",
                     MessageType.Warning);
             }
 
