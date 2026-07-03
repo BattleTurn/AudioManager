@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace BattleTurn.AudioManager.Runtime
+namespace BattleTurn.AudioManagement.Runtime
 {
     [CreateAssetMenu(fileName = TYPE_NAME, menuName = CREATE_ASSET_PATH)]
     public sealed class AudioTemplateAlbumSO : AudioAlbumBaseSO

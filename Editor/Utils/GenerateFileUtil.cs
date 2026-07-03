@@ -6,7 +6,7 @@ using System.Text.RegularExpressions;
 using UnityEngine;
 using UnityEditor;
 
-namespace BattleTurn.AudioManager.Editor
+namespace BattleTurn.AudioManagement.Editor
 {
     internal static class GenerateFileUtil
     {

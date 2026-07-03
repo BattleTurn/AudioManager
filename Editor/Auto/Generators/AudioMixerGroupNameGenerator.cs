@@ -5,7 +5,7 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.Audio;
 
-namespace BattleTurn.AudioManager.Editor
+namespace BattleTurn.AudioManagement.Editor
 {
     internal static class AudioMixerGroupNameGenerator
     {

@@ -1,10 +1,10 @@
 using System.Collections.Generic;
 using UnityEditor;
-using BattleTurn.AudioManager.Runtime;
+using BattleTurn.AudioManagement.Runtime;
 using UnityEngine;
 using NaughtyAttributes.Editor;
 
-namespace BattleTurn.AudioManager.Editor
+namespace BattleTurn.AudioManagement.Editor
 {
     [CustomEditor(typeof(AudioAlbumSO))]
     public class AudioAlbumSOEditor : NaughtyInspector

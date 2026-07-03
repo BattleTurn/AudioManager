@@ -3,7 +3,7 @@ using System;
 using UnityEditor;
 using UnityEngine;
 
-namespace BattleTurn.AudioManager.Editor
+namespace BattleTurn.AudioManagement.Editor
 {
     [CustomEditor(typeof(Runtime.AudioAlbumManagerSO))]
     internal sealed class AudioAlbumManagerSOEditor : NaughtyInspector

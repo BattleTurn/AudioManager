@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using NaughtyAttributes;
 using UnityEngine;
 
-namespace BattleTurn.AudioManager.Runtime
+namespace BattleTurn.AudioManagement.Runtime
 {
     [CreateAssetMenu(fileName = "New " + TYPE_NAME, menuName = CREATE_ASSET_PATH)]
     public class AudioCategorySO : AudioCategoryBaseSO

@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Generic;
+using AYellowpaper.SerializedCollections;
 using Cysharp.Threading.Tasks;
+using NaughtyAttributes;
 using UnityEngine;
 using UnityEngine.Audio;
 
-namespace BattleTurn.AudioManager.Runtime
+namespace BattleTurn.AudioManagement.Runtime
 {
     [Serializable]
     /// <summary>
@@ -21,14 +23,15 @@ namespace BattleTurn.AudioManager.Runtime
 
         [SerializeField] private AudioMixerGroup _mixerGroup;
 
+        [SerializeField, ReadOnly] private SerializedDictionary<AudioSource, uint> _playbackTokens = new();
+        [SerializeField, ReadOnly] private SerializedDictionary<AudioSource, short> _loopingSources = new();
+        [SerializeField, ReadOnly] private SerializedDictionary<AudioSource, OneShotParameter> _oneShotSources = new();
+        [SerializeField, ReadOnly] private SerializedDictionary<AudioSource, DelayParameter> _delayedSources = new();
+
         private readonly Transform _transform;
         private readonly IAudioCategory _category;
         private readonly Pool<AudioSource> _pool;
         private readonly HashSet<AudioSource> _activeSources = new();
-        private readonly Dictionary<AudioSource, uint> _playbackTokens = new();
-        private readonly Dictionary<AudioSource, short> _loopingSources = new();
-        private readonly Dictionary<AudioSource, OneShotParameter> _oneShotSources = new();
-        private readonly Dictionary<AudioSource, DelayParameter> _delayedSources = new();
 
         public string Name => _name;
         public IAudioCategory Category => _category;
@@ -163,11 +166,11 @@ namespace BattleTurn.AudioManager.Runtime
 
         private AudioSource CreateNewSource()
         {
-            var go = new GameObject("PooledMusicSource");
-            go.transform.SetParent(_transform, worldPositionStays: false);
-            go.SetActive(true);
+            var gObject = new GameObject("PooledChannel");
+            gObject.transform.SetParent(_transform, worldPositionStays: false);
+            gObject.SetActive(true);
 
-            var src = go.AddComponent<AudioSource>();
+            var src = gObject.AddComponent<AudioSource>();
             src.playOnAwake = false;
             return src;
         }

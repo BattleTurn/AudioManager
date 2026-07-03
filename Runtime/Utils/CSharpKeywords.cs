@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace BattleTurn.AudioManager.Runtime
+namespace BattleTurn.AudioManagement.Runtime
 {
     public static class CSharpKeywords
     {

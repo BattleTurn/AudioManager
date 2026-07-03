@@ -1,13 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using BattleTurn.AudioManager.Runtime;
+using BattleTurn.AudioManagement.Runtime;
 using UnityEditor;
 using UnityEngine.Audio;
 
-using RuntimeAudioManager = BattleTurn.AudioManager.Runtime.AudioAlbumManagerSO;
+using RuntimeAudioManager = BattleTurn.AudioManagement.Runtime.AudioAlbumManagerSO;
 
-namespace BattleTurn.AudioManager.Editor
+namespace BattleTurn.AudioManagement.Editor
 {
     [CustomPropertyDrawer(typeof(AudioMixerExposedParameterNameAttribute))]
     internal sealed class AudioMixerExposedParameterNameAttributeDrawer : StringDropdownDrawer

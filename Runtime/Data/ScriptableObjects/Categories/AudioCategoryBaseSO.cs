@@ -1,7 +1,7 @@
 using NaughtyAttributes;
 using UnityEngine;
 
-namespace BattleTurn.AudioManager.Runtime
+namespace BattleTurn.AudioManagement.Runtime
 {
     public abstract class AudioCategoryBaseSO : ScriptableObject, IAudioCategory
     {

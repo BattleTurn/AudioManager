@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-namespace BattleTurn.AudioManager.Runtime
+namespace BattleTurn.AudioManagement.Runtime
 {
     [AttributeUsage(AttributeTargets.Field)]
     public sealed class AudioNameDropdownAttribute : PropertyAttribute

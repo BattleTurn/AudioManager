@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
-using BattleTurn.AudioManager.Runtime;
+using BattleTurn.AudioManagement.Runtime;
 
-namespace BattleTurn.AudioManager.Editor
+namespace BattleTurn.AudioManagement.Editor
 {
     internal static class AudioTypeGenerator
     {

@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace BattleTurn.AudioManager.Runtime
+namespace BattleTurn.AudioManagement.Runtime
 {
     internal class Pool<T> : IDisposable
     {
@@ -11,7 +11,7 @@ namespace BattleTurn.AudioManager.Runtime
         public event Action<T> OnGetInstance;
         public event Action<T> OnReleaseInstance;
 
-        private readonly Queue<T> _pool = new();
+        private readonly Stack<T> _pool = new();
 
         public Pool(OnCreate onCreate, Action<T> onRelease, Action<T> onGet)
         {
@@ -24,7 +24,7 @@ namespace BattleTurn.AudioManager.Runtime
         {
             for (int i = 0; i < initialSize; i++)
             {
-                _pool.Enqueue(OnCreateInstance.Invoke());
+                _pool.Push(OnCreateInstance.Invoke());
             }
         }
 
@@ -32,7 +32,7 @@ namespace BattleTurn.AudioManager.Runtime
         {
             for (int i = 0; i < initialSize; i++)
             {
-                _pool.Enqueue(OnCreateInstance.Invoke());
+                _pool.Push(OnCreateInstance.Invoke());
             }
         }
 
@@ -40,7 +40,7 @@ namespace BattleTurn.AudioManager.Runtime
         {
             for (int i = 0; i < initialSize; i++)
             {
-                _pool.Enqueue(OnCreateInstance.Invoke());
+                _pool.Push(OnCreateInstance.Invoke());
             }
         }
 
@@ -53,7 +53,7 @@ namespace BattleTurn.AudioManager.Runtime
                     throw new InvalidOperationException("No method subscribed to OnGetInstance event.");
                 }
 
-                var item = _pool.Dequeue();
+                var item = _pool.Pop();
                 OnGetInstance.Invoke(item);
 
                 return item;
@@ -64,7 +64,16 @@ namespace BattleTurn.AudioManager.Runtime
                 {
                     throw new InvalidOperationException("No method subscribed to OnCreateInstance event.");
                 }
-                return OnCreateInstance.Invoke();
+
+                var item = OnCreateInstance.Invoke();
+
+                if (OnGetInstance == null)
+                {
+                    throw new InvalidOperationException("No method subscribed to OnGetInstance event.");
+                }
+
+                OnGetInstance.Invoke(item);
+                return item;
             }
         }
 
@@ -75,7 +84,7 @@ namespace BattleTurn.AudioManager.Runtime
                 throw new InvalidOperationException("No method subscribed to OnReleaseInstance event.");
             }
             OnReleaseInstance.Invoke(list);
-            _pool.Enqueue(list);
+            _pool.Push(list);
         }
 
         public void Dispose()

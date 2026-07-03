@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-namespace BattleTurn.AudioManager.Runtime
+namespace BattleTurn.AudioManagement.Runtime
 {
     /// <summary>
     /// Draws a dropdown for a string field, populated with exposed parameter names

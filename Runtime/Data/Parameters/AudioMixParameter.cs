@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-namespace BattleTurn.AudioManager.Runtime
+namespace BattleTurn.AudioManagement.Runtime
 {
     [Serializable]
     public struct AudioMixParameter : IAudioMixable

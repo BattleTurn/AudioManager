@@ -1,8 +1,8 @@
 using System.Collections.Generic;
-using BattleTurn.AudioManager.Runtime;
+using BattleTurn.AudioManagement.Runtime;
 using UnityEditor;
 
-namespace BattleTurn.AudioManager.Editor
+namespace BattleTurn.AudioManagement.Editor
 {
     [CustomPropertyDrawer(typeof(AudioNameDropdownAttribute))]
     internal sealed class AudioNameDropdownAttributeDrawer : StringDropdownDrawer

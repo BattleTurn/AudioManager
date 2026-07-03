@@ -1,4 +1,4 @@
-namespace BattleTurn.AudioManager.Runtime
+namespace BattleTurn.AudioManagement.Runtime
 {
     public interface IAudioMixable
     {

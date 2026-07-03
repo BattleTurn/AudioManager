@@ -5,15 +5,15 @@ using System.Text;
 using UnityEngine;
 using UnityEditor;
 using UnityEngine.Audio;
-using BattleTurn.AudioManager.Runtime;
+using BattleTurn.AudioManagement.Runtime;
 
-namespace BattleTurn.AudioManager.Editor
+namespace BattleTurn.AudioManagement.Editor
 {
     public static class AudioMixerGenerator
     {
         private const string TEMPLATE_MIXER_UNITY_PATH = "Packages/AudioManager/Editor/Template/AudioMixer.mixer";
         private const string GAME_MIXER_UNITY_PATH = CodeGenerationUtils.GENERATED_FOLDER_PATH + "/GameMixer.mixer";
-        private const string MIXER_CREATED_ONCE_KEY_PREFIX = nameof(BattleTurn) + "." + nameof(AudioManager) + ".GameMixerCreatedOnce::";
+        private const string MIXER_CREATED_ONCE_KEY_PREFIX = nameof(BattleTurn) + "." + nameof(AudioManagement) + ".GameMixerCreatedOnce::";
 
         private const string OUTPUT_PATH = CodeGenerationUtils.GENERATED_FOLDER_PATH + "/GameMixer.mixer";
 

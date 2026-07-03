@@ -1,7 +1,7 @@
 
 using System;
 
-namespace BattleTurn.AudioManager.Runtime
+namespace BattleTurn.AudioManagement.Runtime
 {
     internal sealed class NullArrayException : Exception
     {

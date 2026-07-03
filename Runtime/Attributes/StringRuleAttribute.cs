@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace BattleTurn.AudioManager.Runtime
+namespace BattleTurn.AudioManagement.Runtime
 {
     /// <summary>
     /// Base attribute for string validation rules.

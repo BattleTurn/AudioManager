@@ -1,10 +1,10 @@
 using System.Collections.Generic;
-using BattleTurn.AudioManager.Runtime;
+using BattleTurn.AudioManagement.Runtime;
 using NaughtyAttributes.Editor;
 using UnityEditor;
 using UnityEngine;
 
-namespace BattleTurn.AudioManager.Editor
+namespace BattleTurn.AudioManagement.Editor
 {
     [CustomEditor(typeof(AudioCategorySO))]
     internal sealed class AudioCategorySOEditor : NaughtyInspector

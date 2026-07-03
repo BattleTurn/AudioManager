@@ -1,9 +1,9 @@
 
-using BattleTurn.AudioManager.Runtime;
+using BattleTurn.AudioManagement.Runtime;
 using NaughtyAttributes.Editor;
 using UnityEditor;
 
-namespace BattleTurn.AudioManager.Editor
+namespace BattleTurn.AudioManagement.Editor
 {
     [CustomEditor(typeof(AudioTemplateAlbumSO))]
     internal class AudioDataTemplateSOEditor : NaughtyInspector

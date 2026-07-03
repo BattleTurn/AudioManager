@@ -4,7 +4,7 @@ using NaughtyAttributes;
 using UnityEngine;
 using UnityEngine.Audio;
 
-namespace BattleTurn.AudioManager.Runtime
+namespace BattleTurn.AudioManagement.Runtime
 {
     [CreateAssetMenu(fileName = TYPE_NAME, menuName = CREATE_ASSET_PATH)]
     public sealed class AudioAlbumManagerSO : ScriptableObject

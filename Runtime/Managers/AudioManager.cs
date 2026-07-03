@@ -7,25 +7,27 @@ using NaughtyAttributes;
 using UniRx;
 using UnityEngine;
 using UnityEngine.Audio;
+using AYellowpaper.SerializedCollections;
 
-namespace BattleTurn.AudioManager.Runtime
+namespace BattleTurn.AudioManagement.Runtime
 {
     public abstract class AudioManager : MonoBehaviour
     {
         private readonly FloatReactiveProperty _volume = new FloatReactiveProperty(1f);
 
         [SerializeField] private byte _prewarmAudioSourceAmount = 2;
-        [Expandable]
-        [SerializeField] protected AudioAlbumManagerSO audioManager;
+
+        [SerializeField, Expandable] protected AudioAlbumManagerSO audioManager;
+
+        [SerializeField, ReadOnly] private SerializedDictionary<string, Channel> _channelMap = new();
+        [SerializeField, ReadOnly] private SerializedDictionary<string, string> _categoryByAudioName = new();
+        [SerializeField, ReadOnly] private SerializedDictionary<string, float> _originalMixerValues = new();
+
+        private readonly List<string> _parameterNamesCache = new();
 
         public abstract string Key { get; }
 
         protected abstract AudioAlbumBaseSO audioData { get; }
-
-        private readonly List<string> _parameterNamesCache = new();
-        private readonly Dictionary<string, Channel> _channelMap = new();
-        private readonly Dictionary<string, string> _categoryByAudioName = new();
-        private readonly Dictionary<string, float> _originalMixerValues = new();
 
         #region PROPERTIES
         public float Volume

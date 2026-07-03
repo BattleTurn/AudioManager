@@ -1,9 +1,9 @@
 using System.Linq;
 using System.Collections.Generic;
-using BattleTurn.AudioManager.Runtime;
+using BattleTurn.AudioManagement.Runtime;
 using System.Text;
 
-namespace BattleTurn.AudioManager.Editor
+namespace BattleTurn.AudioManagement.Editor
 {
     internal static class AudioCategoryConstGenerator
     {

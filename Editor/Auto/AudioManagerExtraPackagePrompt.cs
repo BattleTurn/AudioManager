@@ -3,12 +3,12 @@ using System.IO;
 using UnityEditor;
 using UnityEngine;
 
-namespace BattleTurn.AudioManager.Editor
+namespace BattleTurn.AudioManagement.Editor
 {
     [InitializeOnLoad]
     internal static class AudioManagerExtraPackagePrompt
     {
-        private const string KEY_PREFIX = nameof(BattleTurn) + "." + nameof(AudioManager) + ".ExtraPackage.V2::";
+        private const string KEY_PREFIX = nameof(BattleTurn) + "." + nameof(AudioManagement) + ".ExtraPackage.V2::";
         private const string EXTRA_PACKAGE_UNITY_PATH = "Packages/AudioManager/Editor/Extras/AudioManager(Extra).unitypackage";
         private const string EXTRA_PACKAGE_RELATIVE_PATH = "Editor/Extras/AudioManager(Extra).unitypackage";
 

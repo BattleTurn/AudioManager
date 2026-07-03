@@ -1,7 +1,7 @@
 using UnityEditor;
 using UnityEngine.Audio;
 
-namespace BattleTurn.AudioManager.Editor
+namespace BattleTurn.AudioManagement.Editor
 {
     [InitializeOnLoad]
     internal static class AudioMixerBootstrapper
