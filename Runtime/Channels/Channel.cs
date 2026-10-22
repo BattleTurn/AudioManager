@@ -23,10 +23,10 @@ namespace BattleTurn.AudioManagement.Runtime
 
         [SerializeField] private AudioMixerGroup _mixerGroup;
 
-        [SerializeField, ReadOnly] private SerializedDictionary<AudioSource, uint> _playbackTokens = new();
-        [SerializeField, ReadOnly] private SerializedDictionary<AudioSource, short> _loopingSources = new();
-        [SerializeField, ReadOnly] private SerializedDictionary<AudioSource, OneShotParameter> _oneShotSources = new();
-        [SerializeField, ReadOnly] private SerializedDictionary<AudioSource, DelayParameter> _delayedSources = new();
+        [SerializeField, ReadOnly] private Dictionary<AudioSource, uint> _playbackTokens = new();
+        [SerializeField, ReadOnly] private Dictionary<AudioSource, short> _loopingSources = new();
+        [SerializeField, ReadOnly] private Dictionary<AudioSource, OneShotParameter> _oneShotSources = new();
+        [SerializeField, ReadOnly] private Dictionary<AudioSource, DelayParameter> _delayedSources = new();
 
         private readonly Transform _transform;
         private readonly IAudioCategory _category;

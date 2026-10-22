@@ -19,9 +19,9 @@ namespace BattleTurn.AudioManagement.Runtime
 
         [SerializeField, Expandable] protected AudioAlbumManagerSO audioManager;
 
-        [SerializeField, ReadOnly] private SerializedDictionary<string, Channel> _channelMap = new();
-        [SerializeField, ReadOnly] private SerializedDictionary<string, string> _categoryByAudioName = new();
-        [SerializeField, ReadOnly] private SerializedDictionary<string, float> _originalMixerValues = new();
+        [SerializeField, ReadOnly] private Dictionary<string, Channel> _channelMap = new();
+        [SerializeField, ReadOnly] private Dictionary<string, string> _categoryByAudioName = new();
+        [SerializeField, ReadOnly] private Dictionary<string, float> _originalMixerValues = new();
 
         private readonly List<string> _parameterNamesCache = new();
 
