@@ -7,7 +7,6 @@ using NaughtyAttributes;
 using UniRx;
 using UnityEngine;
 using UnityEngine.Audio;
-using AYellowpaper.SerializedCollections;
 
 namespace BattleTurn.AudioManagement.Runtime
 {
