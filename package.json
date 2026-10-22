@@ -2,7 +2,7 @@
   "name": "battleturn.audiomanager",
   "displayName": "Audio Manager",
   "version": "1.0.0",
-  "unity": "6.6.0",
+  "unity": "6000.6",
   "description": "A audio manager, which can auto generate enum base on names",
   "keywords": [
     "Audio Manager",
