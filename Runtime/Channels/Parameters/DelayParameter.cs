@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 namespace BattleTurn.AudioManagement.Runtime
@@ -8,6 +9,7 @@ namespace BattleTurn.AudioManagement.Runtime
         EveryLoop,
     }
 
+    [Serializable]
     public struct DelayParameter : IParameterizable
     {
         [SerializeField] private float _delayTime;
